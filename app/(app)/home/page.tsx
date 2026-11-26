@@ -1,18 +1,15 @@
 "use client";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { monthlyKobo, useStore } from "@/components/store";
 import { TopUpSheet } from "@/components/sheets";
 import { Badge } from "@/components/ui";
-import { Chevron, Logout, Plus } from "@/components/icons";
+import { Chevron, Plus } from "@/components/icons";
 import { money, naira, nextCharge, shortDate } from "@/lib/format";
-import { supabase } from "@/lib/supabase";
 import { Logo } from "@/components/logo";
 
 export default function Home() {
   const { ready, profile, balance, subs, cards, usdRate } = useStore();
-  const router = useRouter();
   const [topup, setTopup] = useState(false);
   if (!ready) return <div className="loading">Loading…</div>;
 
@@ -23,16 +20,11 @@ export default function Home() {
   const hour = new Date().getHours();
   const hello = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
-  async function signOut() {
-    await supabase.auth.signOut();
-    router.replace("/"); router.refresh();
-  }
-
   return (
     <section className="screen">
       <div className="topbar">
         <div className="row"><Logo size={40} /><div><p className="sub small">{hello}</p><h2 style={{ fontSize: 22 }}>{profile?.full_name.split(" ")[0] || "there"}</h2></div></div>
-        <button className="icon-btn" aria-label="Sign out" onClick={signOut}><Logout /></button>
+        <Link className="avatar" href="/profile" aria-label="Profile">{(profile?.full_name ?? "").trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("") || "?"}</Link>
       </div>
 
       <div className="balance">

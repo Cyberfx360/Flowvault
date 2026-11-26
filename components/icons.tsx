@@ -13,3 +13,4 @@ export const HomeI = () => <svg {...P}><path d="M3 10.5 12 3l9 7.5V21H3z" /></sv
 export const CardI = () => <svg {...P}><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20" /></svg>;
 export const SubsI = () => <svg {...P}><path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5" /></svg>;
 export const ListI = () => <svg {...P}><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /></svg>;
+export const UserI = () => <svg {...P}><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg>;
