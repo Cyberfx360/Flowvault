@@ -83,9 +83,10 @@ h3{font-size:13px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;
 .item .small{color:var(--ink-muted)}
 .amt{font-weight:600;text-align:right;white-space:nowrap}
 .badge{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-weight:700;font-size:15px;flex:none;color:#fff}
-.badge.logo{background:#fff;box-shadow:inset 0 0 0 1px var(--line);overflow:hidden;padding:6px}
-.badge.logo img{width:100%;height:100%;object-fit:contain;display:block}
-.detailHead .badge.logo{padding:10px}
+/* Company logos fill their rounded box edge to edge, clipped to its corners. */
+.badge.logo{position:relative;background:#fff;overflow:hidden;padding:0;isolation:isolate}
+.badge.logo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit}
+.badge.logo::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 1px #14161414;pointer-events:none}
 .pill{white-space:nowrap;font-size:12px;font-weight:500;border-radius:999px;padding:2px 8px;display:inline-block}
 .pill.ok{background:var(--success-soft);color:var(--success)}
 .pill.off{background:var(--sunken);color:var(--ink-muted)}
