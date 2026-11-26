@@ -130,7 +130,8 @@ update flowvault.fx_rates set ngn_per_unit = 1550 where currency = 'USD';  -- th
 
 **Maplerad money flow:** cards are paid only from the **Spend** wallet. Money arrives in the
 **Treasury** wallet and must be moved to Spend first (3% fee below $25,000). Maplerad also holds a
-$1,000 card reserve before live cards work.
+$1,000 card reserve before live cards work. Before each new card the server tops Spend up from
+Treasury to the $5 that card needs (`ensureSpend` in lib/cards/maplerad.ts), never more than $100 at once.
 
 ### IP whitelisting
 

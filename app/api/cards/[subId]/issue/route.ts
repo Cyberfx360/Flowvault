@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { maplerad, providerName } from "@/lib/cards";
-import { walletsSummary } from "@/lib/cards/maplerad";
+import { CARD_SPEND_CENTS, ensureSpend, walletsSummary } from "@/lib/cards/maplerad";
 import { load } from "@/lib/cards/route-helpers";
 import { adminClient } from "@/lib/server-supabase";
 
@@ -33,6 +33,9 @@ export async function POST(_req: Request, { params }: { params: Promise<{ subId:
   if (feeErr) { console.error(feeErr); return NextResponse.json({ error: "Couldn't take the card fee. Please try again." }, { status: 500 }); }
   if (fee === "insufficient") return NextResponse.json({ error: "Insufficient balance" }, { status: 402 });
   try {
+    // Cards are paid from the Spend wallet; top it up from Treasury first if it's short.
+    const moved = await ensureSpend(CARD_SPEND_CENTS);
+    if (moved) console.log("Moved " + moved + " cents from Treasury to Spend for a new card");
     const reference = await maplerad.requestCard(cust.customer_id);
     const { error } = await admin.rpc("fv_server_card_requested", { p_subscription: subId, p_reference: reference });
     if (error) throw error;

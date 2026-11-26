@@ -68,6 +68,26 @@ export async function walletsSummary(): Promise<string> {
   }).join(", ");
 }
 
+/**
+ * Cards are paid only from the USD Spend wallet (Maplerad commercials). Money arrives in Treasury,
+ * so before making a card we move whatever Spend is short of `neededCents` from Treasury to Spend.
+ * Maplerad charges 3% on that move (from Treasury); the card fee covers it.
+ */
+export async function ensureSpend(neededCents: number): Promise<number> {
+  const data = await call<unknown>("GET", "/wallets");
+  const list = (Array.isArray(data) ? data : []) as Record<string, unknown>[];
+  const isSpend = (w: Record<string, unknown>) => w.currency === "USD" && Object.values(w).some((v) => typeof v === "string" && v.toUpperCase() === "SPEND");
+  const have = Number(list.find(isSpend)?.available_balance ?? 0) || 0; // cents, like the other balances
+  const move = Math.ceil(neededCents - have);
+  if (move <= 0) return 0;
+  if (move > 10000) throw new Error("Refusing to move more than 100 dollars to Spend in one go");
+  await call("POST", "/wallets/fund", { currency: "USD", source_wallet_type: "TREASURY", destination_wallet_type: "SPEND", amount: move });
+  return move;
+}
+
+/** What one new card takes from Spend: 2 dollars issuance + 1 dollar funding fee + the 2 dollar first load. */
+export const CARD_SPEND_CENTS = 500;
+
 export type IdType = "NIN" | "PASSPORT" | "DRIVERS_LICENSE" | "VOTERS_CARD";
 /** Tier 2: an ID document plus a selfie. Maplerad only makes cards for tier 2 customers. */
 /** Photos go as base64 data URIs ("data:image/jpeg;base64,..."); Maplerad rejects links. */
