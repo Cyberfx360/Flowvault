@@ -15,5 +15,7 @@ export async function POST(req: Request) {
   if ((b.event === "charge.success" || b.event === "charge.failed") && ref?.startsWith("fv_")) {
     try { await settle(adminClient(), ref); } catch (e) { console.error(e); return NextResponse.json({ ok: false }, { status: 500 }); }
   }
+  // Daily move to Maplerad (lib/sweep.ts): just log how it ended; Render's logs show it.
+  if (b.event?.startsWith("transfer.")) console.log("paystack transfer:", b.event, ref);
   return NextResponse.json({ ok: true });
 }
