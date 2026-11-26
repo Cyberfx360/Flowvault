@@ -115,14 +115,20 @@ All card company calls happen on the server (`app/api/...`). The secret key neve
 
 ### Card fee
 
-Making a real card costs the user a fee, taken from their Flowvault wallet (default ₦5,000, a guess
-until Maplerad confirms their card fee and minimum load). If the wallet is short, the card isn't
-requested and the app shows "Insufficient balance". If Maplerad fails to make the card, the fee is
-refunded to the wallet. Test cards are free. To change the fee (amount in kobo):
+Making a real card costs the user a fee, taken from their Flowvault wallet. It follows Maplerad's
+prices: card issuance $2 + card funding fee $1 + $2 first load = $5 from the Spend wallet, plus the
+3% Treasury-to-Spend transfer fee, so $5.15. It's converted at the app's USD rate and rounded up to
+the next ₦100 (₦8,000 at ₦1,550/$). There's no Flowvault margin in it yet. If the wallet is short,
+the card isn't requested and the app shows "Insufficient balance". If Maplerad fails, the fee is refunded.
 
 ```sql
-update flowvault.settings set card_fee_kobo = 500000;  -- ₦5,000
+update flowvault.settings set card_fee_usd_cents = 515;   -- change the dollar amount
+update flowvault.fx_rates set ngn_per_unit = 1550 where currency = 'USD';  -- the rate used
 ```
+
+**Maplerad money flow:** cards are paid only from the **Spend** wallet. Money arrives in the
+**Treasury** wallet and must be moved to Spend first (3% fee below $25,000). Maplerad also holds a
+$1,000 card reserve before live cards work.
 
 ### IP whitelisting
 
