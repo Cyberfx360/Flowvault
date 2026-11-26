@@ -84,12 +84,15 @@ function VerifyScreen() {
               <option value="DRIVERS_LICENSE">Driver&apos;s licence</option><option value="VOTERS_CARD">Voter&apos;s card</option>
             </select></div>
           <div className="field"><label htmlFor="v-idnum">ID number</label><input id="v-idnum" name="idNumber" required autoComplete="off" placeholder="The number printed on it" /></div>
-          <div className="field"><label htmlFor="v-idpic">Photo of your ID</label>
-            <input id="v-idpic" type="file" accept="image/*" capture="environment" onChange={pick(setIdPic)} />
+          <div className="field"><span className="flabel">Photo of your ID</span>
+            {/* A big tappable button; the real file input is hidden behind it (iPhone-friendly). */}
+            <label className="btn ghost block filepick">{idPic ? "Change photo" : "Take or choose a photo"}
+              <input type="file" accept="image/*" onChange={pick(setIdPic)} /></label>
             <span className="hint">Front side, flat, all four corners in view, no glare.</span>
             {idPic && <img src={idPic} alt="Your ID" style={{ width: "100%", borderRadius: 12, marginTop: 6 }} />}</div>
-          <div className="field"><label htmlFor="v-selfie">Selfie</label>
-            <input id="v-selfie" type="file" accept="image/*" capture="user" onChange={pick(setSelfie)} />
+          <div className="field"><span className="flabel">Selfie</span>
+            <label className="btn ghost block filepick">{selfie ? "Retake selfie" : "Take a selfie"}
+              <input type="file" accept="image/*" capture="user" onChange={pick(setSelfie)} /></label>
             <span className="hint">Face the camera in good light. It&apos;s matched against your ID photo.</span>
             {selfie && <img src={selfie} alt="Your selfie" style={{ width: 120, borderRadius: 12, marginTop: 6 }} />}</div>
           {err && <div className="error" role="alert">{err}</div>}
