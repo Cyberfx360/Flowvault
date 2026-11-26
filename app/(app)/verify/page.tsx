@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 import { useStore } from "@/components/store";
 import { Back, Info } from "@/components/icons";
 import { cardsApi } from "@/lib/cards-client";
@@ -18,14 +18,22 @@ async function shrink(file: File): Promise<string> {
 
 /** ID check for real cards. The card company needs these details by law; Flowvault doesn't keep them. */
 export default function Verify() {
+  return <Suspense fallback={<div className="loading">Loading…</div>}><VerifyScreen /></Suspense>;
+}
+
+function VerifyScreen() {
   const { profile, reload, toast, cards } = useStore();
   const router = useRouter();
+  const welcome = useSearchParams().get("welcome") === "1"; // came straight from sign-up
+  const done = welcome ? "/home" : "/card";
   const [state, setState] = useState<{ available: boolean; verified: boolean; tier?: number } | null>(null);
   const [idPic, setIdPic] = useState<string | null>(null);
   const [selfie, setSelfie] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   useEffect(() => { fetch("/api/verify").then((r) => r.json()).then(setState).catch(() => setState({ available: false, verified: false })); }, []);
+  // Straight after sign-up, if real cards aren't switched on there's nothing to check: go to the app.
+  useEffect(() => { if (welcome && state && !state.available) router.replace("/home"); }, [welcome, state, router]);
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -50,7 +58,7 @@ export default function Verify() {
     // Cards that failed because the check wasn't finished get made now.
     await Promise.all(cards.filter((c) => c.provider === "maplerad" && c.status === "failed").map((c) => cardsApi.issue(c.subscription_id).catch(() => {})));
     setBusy(false);
-    await reload(); toast("You're verified. New subscriptions now get real cards."); router.replace("/card");
+    await reload(); toast("You're verified. New subscriptions now get real cards."); router.replace(done);
   }
   const pick = (set: (v: string) => void) => async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
@@ -60,9 +68,10 @@ export default function Verify() {
   const [first, ...rest] = (profile?.full_name ?? "").split(" ");
   return (
     <section className="screen">
-      <div className="topbar"><Link className="icon-btn" href="/card" aria-label="Back"><Back /></Link><span style={{ width: 44 }} /></div>
-      <div className="stack" style={{ gap: 6 }}><h2>Verify your ID</h2>
-        <p className="sub">Two quick steps: your BVN, then a photo of your ID and a selfie. Real cards come from our card partner, Maplerad. By law they need to know who you are before they make a card. Flowvault sends these details to them and doesn&apos;t keep them.</p></div>
+      <div className="topbar">{welcome ? <span /> : <Link className="icon-btn" href="/card" aria-label="Back"><Back /></Link>}
+        {welcome ? <Link className="btn link" href="/home">Skip for now</Link> : <span style={{ width: 44 }} />}</div>
+      <div className="stack" style={{ gap: 6 }}>{welcome && <p className="sub small">Welcome to Flowvault</p>}<h2>Verify your ID</h2>
+        <p className="sub">Two quick steps: your BVN, then a photo of your ID and a selfie. Real cards come from our card partner, Maplerad. By law they need to know who you are before they make a card. Flowvault sends your details to them securely, and keeps your ID photos in private storage.</p></div>
       {!state ? <div className="loading">Loading…</div>
         : !state.available ? <div className="callout"><Info /><span>Real cards aren&apos;t switched on yet. You can keep using test cards for now.</span></div>
         : state.verified || profile?.verified ? <div className="callout"><Info /><span>You&apos;re verified. Every new subscription you add gets a real card.</span></div>
