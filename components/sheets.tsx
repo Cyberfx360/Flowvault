@@ -76,7 +76,7 @@ export function AddSubSheet({ open, onClose }: { open: boolean; onClose: () => v
     });
     if (r && provider !== "mock") await cardsApi.issue(r).catch((e) => toast(e.message));
     setBusy(false);
-    if (r) { setTyped(""); onClose(); toast(`${name} added with its own card`); router.push(`/subs/${r}`); }
+    if (r) { setTyped(""); onClose(); toast(`${name} added with its own card`); router.push(`/subs/${r}?new=1`); }
   }
   return (
     <Sheet open={open} onClose={onClose} label="Add a subscription">
@@ -98,7 +98,7 @@ export function AddSubSheet({ open, onClose }: { open: boolean; onClose: () => v
             {Array.from({ length: 28 }, (_, i) => <option key={i + 1} value={i + 1}>{i + 1}</option>)}
           </select><span className="hint">Day of the month the service bills you.</span></div>
         {err && <div className="error" role="alert">{err}</div>}
-        <button className="btn primary block" disabled={busy}>{busy ? "Adding…" : "Add subscription"}</button>
+        <button className="btn primary block" disabled={busy}>{busy ? "Making your card…" : "Add and make its card"}</button>
       </form>
     </Sheet>
   );

@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { monthlyKobo, useStore } from "@/components/store";
 import { TurnOffSheet } from "@/components/sheets";
@@ -13,6 +13,7 @@ import { money, naira, nextCharge, ordinal, shortDate, dayLabel } from "@/lib/fo
 export default function Detail() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const isNew = useSearchParams().get("new") === "1";
   const { ready, subs, txns, usdRate, cardFor, provider, act, run, toast } = useStore();
   const [offing, setOffing] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -49,7 +50,8 @@ export default function Detail() {
         <span className="sub">{s.plan} · since {new Date(s.created_at).toLocaleDateString("en-NG", { month: "short", year: "numeric" })}</span>
         <span className={"pill " + (s.is_on ? "ok" : "off")}>{s.is_on ? "On" : "Off"}</span>
       </div>
-      <SubCard sub={s} card={card} />
+      {isNew && <div className="callout"><span>Your new <b>{s.name}</b> card is ready. Copy the number and add it as the payment card in your {s.name} account.</span></div>}
+      <SubCard sub={s} card={card} autoReveal={isNew} />
       <p className="sub small" style={{ textAlign: "center" }}>This card is only for {s.name}. Enter its number in your {s.name} account.</p>
       <div className="stat">
         <div><span>Monthly price</span><b className="num">{money(s.price_minor, s.currency)}</b></div>

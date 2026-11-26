@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useStore } from "./store";
 import { Copy, Eye } from "./icons";
 import { cardsApi } from "@/lib/cards-client";
@@ -8,7 +8,7 @@ import type { Card, Sub } from "@/lib/supabase";
 const group = (pan: string) => pan.replace(/(\d{4})(?=\d)/g, "$1 ");
 
 /** One subscription's card, with Show details and Copy number. */
-export function SubCard({ sub, card }: { sub: Sub; card: Card | undefined }) {
+export function SubCard({ sub, card, autoReveal }: { sub: Sub; card: Card | undefined; autoReveal?: boolean }) {
   const { toast } = useStore();
   const [shown, setShown] = useState<{ pan: string; cvv: string } | null>(null);
   const ready = card?.status === "active";
@@ -16,6 +16,11 @@ export function SubCard({ sub, card }: { sub: Sub; card: Card | undefined }) {
   async function details() {
     try { return await cardsApi.reveal(sub.id); } catch (e) { toast(e instanceof Error ? e.message : "Couldn't load card details"); return null; }
   }
+  // A brand-new card opens with its details showing, ready to copy.
+  const did = useRef(false);
+  useEffect(() => {
+    if (autoReveal && ready && !did.current) { did.current = true; details().then((d) => d && setShown(d)); }
+  }); // eslint-disable-line react-hooks/exhaustive-deps
   async function reveal() { if (shown) return setShown(null); setShown(await details()); }
   async function copy() {
     const d = shown ?? (await details());

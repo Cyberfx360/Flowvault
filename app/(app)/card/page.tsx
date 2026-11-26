@@ -1,16 +1,20 @@
 "use client";
 import Link from "next/link";
+import { useState } from "react";
+import { AddSubSheet } from "@/components/sheets";
 import { useStore } from "@/components/store";
 import { Badge } from "@/components/ui";
-import { Chevron, Info } from "@/components/icons";
+import { Chevron, Info, Plus } from "@/components/icons";
 import { money } from "@/lib/format";
 
 export default function CardsPage() {
   const { ready, subs, cardFor, provider } = useStore();
+  const [adding, setAdding] = useState(false);
   if (!ready) return <div className="loading">Loading…</div>;
   return (
     <section className="screen">
       <div className="topbar"><h2>Cards</h2><span className="pill ok">{subs.length} {subs.length === 1 ? "card" : "cards"}</span></div>
+      <button className="btn primary block" onClick={() => setAdding(true)}><Plus />New card for a company</button>
       <p className="sub">Every subscription gets its own card. Give each company only its own card number. Switching a subscription off freezes its card, so that company can&apos;t charge you.</p>
       <div className="panel list">
         {subs.length ? subs.map((s) => {
@@ -25,11 +29,12 @@ export default function CardsPage() {
               <Chevron />
             </Link>
           );
-        }) : <Link href="/subs" className="empty">No cards yet. Add a subscription and its card is made for you.</Link>}
+        }) : <div className="empty">No cards yet. Tap <b>New card for a company</b> above.</div>}
       </div>
       <div className="callout"><Info /><span>{provider === "mock"
         ? "Test cards: these numbers can't pay real services yet. Dollar-priced services are converted from your Naira balance at the rate shown before each charge."
         : "Cards are Visa dollar cards. Naira-priced services are paid in dollars and converted by your bank."}</span></div>
+      <AddSubSheet open={adding} onClose={() => setAdding(false)} />
     </section>
   );
 }
