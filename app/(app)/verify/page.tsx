@@ -94,6 +94,7 @@ function VerifyScreen() {
             <span className="hint">Face the camera in good light. It&apos;s matched against your ID photo.</span>
             {selfie && <img src={selfie} alt="Your selfie" style={{ width: 120, borderRadius: 12, marginTop: 6 }} />}</div>
           {err && <div className="error" role="alert">{err}</div>}
+          <p className="sub small" style={{ margin: 0 }}>By tapping Finish, you agree that we send your NIN, ID photo and selfie to Maplerad so they can confirm it&apos;s you (your selfie counts as biometric data). See our <a href="/privacy" target="_blank" style={{ color: "var(--tint)" }}>Privacy Policy</a>.</p>
           <button className="btn primary block" disabled={busy}>{busy ? "Sending…" : "Finish ID check"}</button>
         </form>
         ) : (
