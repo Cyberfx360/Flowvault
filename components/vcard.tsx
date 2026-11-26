@@ -9,13 +9,24 @@ const group = (pan: string) => pan.replace(/(\d{4})(?=\d)/g, "$1 ");
 
 /** One subscription's card, with Show details and Copy number. */
 export function SubCard({ sub, card, autoReveal }: { sub: Sub; card: Card | undefined; autoReveal?: boolean }) {
-  const { toast } = useStore();
+  const { toast, reload } = useStore();
   const [shown, setShown] = useState<{ pan: string; cvv: string } | null>(null);
   const ready = card?.status === "active";
 
   async function details() {
     try { return await cardsApi.reveal(sub.id); } catch (e) { toast(e instanceof Error ? e.message : "Couldn't load card details"); return null; }
   }
+  // While the card company is still making the card, check again every few seconds (up to 2 minutes).
+  useEffect(() => {
+    if (card?.status !== "pending") return;
+    let n = 0;
+    const t = setInterval(() => {
+      if (++n > 30) return clearInterval(t);
+      cardsApi.issue(sub.id).catch(() => {}).finally(reload); // also picks the card up if the webhook is late
+    }, 4000);
+    return () => clearInterval(t);
+  }, [card?.status, reload, sub.id]);
+
   // A brand-new card opens with its details showing, ready to copy.
   const did = useRef(false);
   useEffect(() => {
@@ -41,6 +52,9 @@ export function SubCard({ sub, card, autoReveal }: { sub: Sub; card: Card | unde
           <div><div className="lbl">CVV</div><div className="val">{shown ? shown.cvv : "•••"}</div></div>
         </div>
       </div>
+      {card?.status === "failed" && (
+        <button className="btn ghost block" onClick={async () => { try { await cardsApi.issue(sub.id); await reload(); } catch (e) { toast(e instanceof Error ? e.message : "Couldn't retry"); } }}>Try making the card again</button>
+      )}
       {ready && (
         <div className="row" style={{ gap: 8 }}>
           <button className="btn ghost" style={{ flex: 1 }} onClick={reveal}><Eye />{shown ? "Hide details" : "Show details"}</button>

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { maplerad } from "@/lib/cards";
-import { fail, load } from "@/lib/cards/route-helpers";
+import { load } from "@/lib/cards/route-helpers";
 import { adminClient } from "@/lib/server-supabase";
 
 /**
@@ -12,9 +12,16 @@ export async function POST(_req: Request, { params }: { params: Promise<{ subId:
   const r = await load(subId);
   if ("error" in r) return r.error;
   if (r.card.provider === "mock" || r.card.status === "active") return NextResponse.json({ ok: true });
-  if (r.card.provider_ref && r.card.status === "pending") return NextResponse.json({ ok: true, pending: true });
-
   const admin = adminClient();
+  if (r.card.provider_ref && r.card.status === "pending") {
+    // Already asked. If Maplerad has finished but its webhook hasn't reached us, pick the card up directly.
+    try {
+      const c = await maplerad.lookup(r.card.provider_ref);
+      if (c) await admin.rpc("fv_server_attach_card", { p_reference: r.card.provider_ref, p_card_id: c.id, p_last4: c.last4, p_network: c.network });
+    } catch (e) { console.error(e); }
+    return NextResponse.json({ ok: true, pending: true });
+  }
+
   const { data: cust } = await admin.rpc("fv_server_customer", { p_user: r.user.id }).maybeSingle<{ customer_id: string | null }>();
   if (!cust?.customer_id) {
     // Maplerad needs ID checks (BVN, date of birth, address) before the first card. That screen isn't built yet.
@@ -25,5 +32,10 @@ export async function POST(_req: Request, { params }: { params: Promise<{ subId:
     const { error } = await admin.rpc("fv_server_card_requested", { p_subscription: subId, p_reference: reference });
     if (error) throw error;
     return NextResponse.json({ ok: true, pending: true });
-  } catch (e) { return fail(e); }
+  } catch (e) {
+    console.error(e);
+    await admin.rpc("fv_server_card_request_failed", { p_subscription: subId });
+    const msg = (e as { providerMessage?: string }).providerMessage;
+    return NextResponse.json({ error: msg ? `Card not made. Maplerad said: ${msg}` : "The card company didn't respond. Please try again." }, { status: 502 });
+  }
 }

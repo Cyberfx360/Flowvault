@@ -54,7 +54,7 @@ export function TurnOffSheet({ sub, onClose }: { sub: Sub | null; onClose: () =>
 }
 
 export function AddSubSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { act, toast, subs, provider } = useStore();
+  const { act, toast, subs } = useStore();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -74,7 +74,7 @@ export function AddSubSheet({ open, onClose }: { open: boolean; onClose: () => v
       p_name: name, p_plan: String(f.get("plan")), p_currency: currency,
       p_price_minor: Math.round(price * 100), p_billing_day: day, p_color: brandFor(name).color ?? COLORS[subs.length % COLORS.length],
     });
-    if (r && provider !== "mock") await cardsApi.issue(r).catch((e) => toast(e.message));
+    if (r) await cardsApi.issue(r).catch((e) => toast(e.message)); // real cards only; does nothing for test cards
     setBusy(false);
     if (r) { setTyped(""); onClose(); toast(`${name} added with its own card`); router.push(`/subs/${r}?new=1`); }
   }

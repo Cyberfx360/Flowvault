@@ -33,7 +33,9 @@ async function call<T = unknown>(method: string, path: string, body?: unknown): 
   try { json = text ? JSON.parse(text) : {}; } catch { /* not JSON */ }
   if (!res.ok || json.status === false) {
     const hint = res.status === 403 ? " (is this server's IP whitelisted at Maplerad?)" : "";
-    throw new Error(`Maplerad ${method} ${path} failed: ${res.status} ${json.message ?? text.slice(0, 200)}${hint}`);
+    const err = new Error(`Maplerad ${method} ${path} failed: ${res.status} ${json.message ?? text.slice(0, 200)}${hint}`) as Error & { providerMessage?: string };
+    err.providerMessage = (json.message ?? "").slice(0, 300) + hint;
+    throw err;
   }
   return (json.data ?? json) as T;
 }
@@ -56,6 +58,7 @@ export async function enrollCustomer(k: KycDetails): Promise<string> {
 
 export const maplerad: CardProvider & {
   requestCard(customerId: string, brand?: "VISA" | "MASTERCARD"): Promise<string>;
+  lookup(idOrRef: string): Promise<{ id: string; last4: string; network: string } | null>;
   fund(cardId: string, cents: number): Promise<void>;
 } = {
   name: "maplerad",
@@ -75,6 +78,14 @@ export const maplerad: CardProvider & {
     throw new Error("Maplerad cards are created in the background: use requestCard() and the webhook");
   },
 
+  /** Looks a card up by its id or tracking reference (Maplerad accepts either). Used when a webhook is late or missing. */
+  async lookup(idOrRef: string) {
+    const c = await call<{ id?: string; masked_pan?: string; card_number?: string; issuer?: string; brand?: string; status?: string }>("GET", `/issuing/${idOrRef}`);
+    const pan = c.masked_pan ?? c.card_number;
+    if (!c.id || !pan) return null;
+    return { id: c.id, last4: pan.slice(-4), network: (c.issuer ?? c.brand) === "MASTERCARD" ? "Mastercard" : "Visa" };
+  },
+
   async fund(cardId, cents) { await call("POST", `/issuing/${cardId}/fund`, { amount: cents }); },
   async freeze(cardId) { await call("PATCH", `/issuing/${cardId}/freeze`); },
   async unfreeze(cardId) { await call("PATCH", `/issuing/${cardId}/unfreeze`); },
@@ -82,10 +93,11 @@ export const maplerad: CardProvider & {
 
   async reveal(cardId) {
     // VERIFY: the docs don't list the fields GET /issuing/{id} returns. These names are the likely ones.
-    const c = await call<{ card_number?: string; pan?: string; cvv?: string }>("GET", `/issuing/${cardId}`);
-    const pan = c.card_number ?? c.pan;
-    if (!pan || !c.cvv) throw new Error("Maplerad didn't return the card details");
-    return { pan, cvv: c.cvv };
+    const c = await call<Record<string, string | undefined>>("GET", `/issuing/${cardId}`);
+    const pan = c.card_number ?? c.pan ?? c.number;
+    const cvv = c.cvv ?? c.cvv2;
+    if (!pan || !cvv) throw new Error("Maplerad didn't return the card details");
+    return { pan, cvv };
   },
 };
 
@@ -94,7 +106,9 @@ export const maplerad: CardProvider & {
  * Signed text is `${svix-id}.${svix-timestamp}.${raw body}`, HMAC-SHA256 with the base64 part of the whsec_ secret.
  */
 export function verifyWebhook(headers: Headers, rawBody: string, toleranceSec = 300): boolean {
-  const secret = process.env.MAPLERAD_WEBHOOK_SECRET;
+  const secret = process.env.MAPLERAD_WEBHOOK_SECRET?.trim();
+  // No whsec_ signing secret from Maplerad? Then only accept calls from Maplerad's published webhook IPs.
+  if (!secret || !secret.startsWith("whsec_")) return fromMapleradIp(headers);
   const id = headers.get("svix-id"), ts = headers.get("svix-timestamp"), sigs = headers.get("svix-signature");
   if (!secret || !id || !ts || !sigs) return false;
   if (Math.abs(Date.now() / 1000 - Number(ts)) > toleranceSec) return false;
@@ -107,3 +121,18 @@ export function verifyWebhook(headers: Headers, rawBody: string, toleranceSec = 
     return got.length === expected.length && crypto.timingSafeEqual(got, expected);
   });
 }
+
+/** Maplerad's webhook sender IPs, from maplerad.dev/docs/verifying-webhooks (Nov 2026). */
+const MAPLERAD_IPS = new Set([
+  "54.216.8.72", "54.173.54.49", "52.215.16.239", "52.55.123.25", "52.6.93.106",
+  "63.33.109.123", "44.228.126.217", "50.112.21.217", "52.24.126.164", "54.148.139.208",
+]);
+function fromMapleradIp(headers: Headers): boolean {
+  // Render sits behind Cloudflare, which sets these headers itself (callers can't fake them).
+  // X-Forwarded-For is NOT used: a caller can put any address in it.
+  const ip = (headers.get("cf-connecting-ip") || headers.get("true-client-ip") || "").trim();
+  return MAPLERAD_IPS.has(ip);
+}
+
+/** True when the server has Maplerad keys, so verified users can get real (sandbox) cards. */
+export const mapleradReady = () => !!process.env.MAPLERAD_SECRET_KEY;

@@ -75,7 +75,7 @@ export default function Detail() {
       </div>
       <div className="stack">
         <h3>Test tools</h3>
-        {provider === "mock" && <button className="btn ghost block" onClick={simulate} disabled={busy}>Pretend {s.name} charges its card now</button>}
+        {card?.provider === "mock" && <button className="btn ghost block" onClick={simulate} disabled={busy}>Pretend {s.name} charges its card now</button>}
         <button className="btn ghost block" style={{ color: "var(--danger)" }} onClick={remove}>Remove from list</button>
       </div>
       <TurnOffSheet sub={offing ? s : null} onClose={() => setOffing(false)} />
