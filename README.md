@@ -119,7 +119,8 @@ Making a real card costs the user a fee, taken from their Flowvault wallet. It f
 prices: card issuance $2 + card funding fee $1 + $2 first load = $5 from the Spend wallet, plus the
 3% Treasury-to-Spend transfer fee, so $5.15 cost. Maplerad lets the business add its own margin on
 issuance and funding; Flowvault charges $6.45 (about 25% margin), converted at the app's USD rate and
-rounded up to the next ₦100 (₦10,000 at ₦1,550/$). If the wallet is short,
+rounded up to the next ₦100 (₦10,000 at ₦1,550/$). The app shows the fee in dollars only ("$6.45") and takes the Naira amount from the wallet
+behind the scenes. If the wallet is short,
 the card isn't requested and the app shows "Insufficient balance". If Maplerad fails, the fee is refunded.
 
 ```sql

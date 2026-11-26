@@ -13,6 +13,8 @@ type Data = {
   usdRate: number;
   /** Fee in kobo for making a real card, taken from the wallet. */
   cardFee: number;
+  /** The same fee in US cents (the price is set in dollars), or null if it's a fixed Naira fee. */
+  cardFeeUsd: number | null;
 };
 type Store = Data & {
   reload: () => Promise<void>;
@@ -28,7 +30,7 @@ const Ctx = createContext<Store | null>(null);
 export const useStore = () => useContext(Ctx)!;
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [d, setD] = useState<Data>({ ready: false, profile: null, balance: 0, cards: [], provider: "mock", subs: [], txns: [], usdRate: 1550, cardFee: 0 });
+  const [d, setD] = useState<Data>({ ready: false, profile: null, balance: 0, cards: [], provider: "mock", subs: [], txns: [], usdRate: 1550, cardFee: 0, cardFeeUsd: null });
   const [msg, setMsg] = useState("");
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -41,7 +43,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     await supabase.rpc("fv_ensure_account");
     const { data, error } = await supabase.rpc("fv_state");
     if (error || !data) { setD((d) => ({ ...d, ready: true })); setMsg("Couldn't load your account. Please refresh the page."); return; }
-    const st = data as { profile: Profile | null; balance: number | null; cards: Card[]; card_provider: string | null; subs: Sub[]; txns: Txn[]; usd_rate: number | null; card_fee: number | null };
+    const st = data as { profile: Profile | null; balance: number | null; cards: Card[]; card_provider: string | null; subs: Sub[]; txns: Txn[]; usd_rate: number | null; card_fee: number | null; card_fee_usd_cents: number | null };
     setD({
       ready: true,
       profile: st.profile, balance: Number(st.balance ?? 0), cards: st.cards ?? [], provider: st.card_provider ?? "mock",
@@ -49,6 +51,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       txns: st.txns.map((x) => ({ ...x, amount_kobo: Number(x.amount_kobo) })),
       usdRate: Number(st.usd_rate ?? 1550),
       cardFee: Number(st.card_fee ?? 0),
+      cardFeeUsd: st.card_fee_usd_cents == null ? null : Number(st.card_fee_usd_cents),
     });
   }, []);
 
