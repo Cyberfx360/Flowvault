@@ -4,8 +4,8 @@ import { Back } from "@/components/icons";
 // Fill these in before launch.
 export const LEGAL = {
   company: "Krevox Global Ltd",
-  rc: "[RC number]",
-  address: "[Registered office address]",
+  rc: "RC 9223711",
+  address: "Back of Africa House, Ogwashi-Uku, Delta State, Nigeria",
   email: "[support email]",
   updated: "26 November 2026",
 };
