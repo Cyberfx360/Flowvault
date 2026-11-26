@@ -23,7 +23,7 @@ export default function Signup() {
     });
     setBusy(false);
     if (error) return setError(error.message);
-    if (data.session) router.replace("/verify?welcome=1"); // ID check right after sign-up (skippable)
+    if (data.session) router.replace("/verify?welcome=1"); // ID check right after sign-up; the app stays locked until it's done
     else setSent(true); // email confirmation is switched on in Supabase
   }
 

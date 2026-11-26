@@ -25,6 +25,11 @@ export async function middleware(req: NextRequest) {
   const inApp = APP.some((p) => path === p || path.startsWith(p + "/"));
 
   if (!user && inApp) return NextResponse.redirect(new URL("/login", req.url));
+  // Nobody sees the app until their BVN and NIN are both checked. Everything else sends them to /verify.
+  if (user && inApp && !path.startsWith("/verify")) {
+    const { data: ok } = await supabase.rpc("fv_is_verified");
+    if (ok !== true) return NextResponse.redirect(new URL("/verify", req.url));
+  }
   if (user && (path === "/" || path === "/login" || path === "/signup"))
     return NextResponse.redirect(new URL("/home", req.url));
   return res;

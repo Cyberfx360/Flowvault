@@ -3,7 +3,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { useStore } from "@/components/store";
-import { Back, Info } from "@/components/icons";
+import { Back, Info, Logout } from "@/components/icons";
+import { supabase } from "@/lib/supabase";
 import { cardsApi } from "@/lib/cards-client";
 
 /** Shrinks a phone photo to a JPEG of at most 1280px (a few hundred KB) so it uploads quickly. */
@@ -25,15 +26,16 @@ function VerifyScreen() {
   const { profile, reload, toast, cards } = useStore();
   const router = useRouter();
   const welcome = useSearchParams().get("welcome") === "1"; // came straight from sign-up
-  const done = welcome ? "/home" : "/card";
+  const done = "/home";
   const [state, setState] = useState<{ available: boolean; verified: boolean; tier?: number } | null>(null);
   const [idPic, setIdPic] = useState<string | null>(null);
   const [selfie, setSelfie] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   useEffect(() => { fetch("/api/verify").then((r) => r.json()).then(setState).catch(() => setState({ available: false, verified: false })); }, []);
-  // Straight after sign-up, if real cards aren't switched on there's nothing to check: go to the app.
-  useEffect(() => { if (welcome && state && !state.available) router.replace("/home"); }, [welcome, state, router]);
+  // The app stays locked until BVN and NIN are both checked (Kenneth's rule), so there's no skipping.
+  const verified = !!(state?.verified || profile?.verified);
+  async function signOut() { await supabase.auth.signOut(); router.replace("/"); router.refresh(); }
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -68,23 +70,19 @@ function VerifyScreen() {
   const [first, ...rest] = (profile?.full_name ?? "").split(" ");
   return (
     <section className="screen">
-      <div className="topbar">{welcome ? <span /> : <Link className="icon-btn" href="/card" aria-label="Back"><Back /></Link>}
-        {welcome ? <Link className="btn link" href="/home">Skip for now</Link> : <span style={{ width: 44 }} />}</div>
+      <div className="topbar">{verified ? <Link className="icon-btn" href="/home" aria-label="Back"><Back /></Link> : <span />}
+        {!verified && <button className="btn link" onClick={signOut}><Logout />Sign out</button>}</div>
       <div className="stack" style={{ gap: 6 }}>{welcome && <p className="sub small">Welcome to Flowvault</p>}<h2>Verify your ID</h2>
-        <p className="sub">Two quick steps: your BVN, then a photo of your ID and a selfie. Real cards come from our card partner, Maplerad. By law they need to know who you are before they make a card. Flowvault sends your details and photos straight to them and doesn&apos;t keep the photos.</p></div>
+        <p className="sub">You need to do this before you can use Flowvault. Two quick steps: your BVN, then your NIN with a photo of your NIN slip or card and a selfie. Real cards come from our card partner, Maplerad. By law they need to know who you are before they make a card. Flowvault sends your details and photos straight to them and doesn&apos;t keep the photos.</p></div>
       {!state ? <div className="loading">Loading…</div>
-        : !state.available ? <div className="callout"><Info /><span>Real cards aren&apos;t switched on yet. You can keep using test cards for now.</span></div>
+        : !state.available ? <div className="callout"><Info /><span>The ID check isn&apos;t available right now. Please try again a little later.</span></div>
         : state.verified || profile?.verified ? <div className="callout"><Info /><span>You&apos;re verified. Every new subscription you add gets a real card.</span></div>
         : (state.tier ?? 0) >= 1 ? (
         <form className="stack" style={{ gap: 14 }} onSubmit={submitId}>
-          <div className="callout"><Info /><span><b>Step 2 of 2.</b> Your BVN is checked. Now add one government ID and a selfie.</span></div>
-          <div className="field"><label htmlFor="v-idtype">ID type</label>
-            <select id="v-idtype" name="idType" defaultValue="NIN">
-              <option value="NIN">NIN slip or card</option><option value="PASSPORT">International passport</option>
-              <option value="DRIVERS_LICENSE">Driver&apos;s licence</option><option value="VOTERS_CARD">Voter&apos;s card</option>
-            </select></div>
-          <div className="field"><label htmlFor="v-idnum">ID number</label><input id="v-idnum" name="idNumber" required autoComplete="off" placeholder="The number printed on it" /></div>
-          <div className="field"><span className="flabel">Photo of your ID</span>
+          <div className="callout"><Info /><span><b>Step 2 of 2.</b> Your BVN is checked. Now add your NIN and a selfie.</span></div>
+          <input type="hidden" id="v-idtype" name="idType" value="NIN" />
+          <div className="field"><label htmlFor="v-idnum">NIN</label><input id="v-idnum" name="idNumber" required autoComplete="off" inputMode="numeric" pattern="[0-9]{11}" title="Your NIN is 11 digits" maxLength={11} placeholder="11 digits" /></div>
+          <div className="field"><span className="flabel">Photo of your NIN slip or card</span>
             {/* A big tappable button; the real file input is hidden behind it (iPhone-friendly). */}
             <label className="btn ghost block filepick">{idPic ? "Change photo" : "Take or choose a photo"}
               <input type="file" accept="image/*" onChange={pick(setIdPic)} /></label>
@@ -115,7 +113,7 @@ function VerifyScreen() {
           </div>
           <div className="field"><label htmlFor="v-post">Postal code</label><input id="v-post" name="postalCode" required placeholder="101233" autoComplete="postal-code" /></div>
           {err && <div className="error" role="alert">{err}</div>}
-          <button className="btn primary block" disabled={busy}>{busy ? "Checking…" : "Next: ID document"}</button>
+          <button className="btn primary block" disabled={busy}>{busy ? "Checking…" : "Next: NIN"}</button>
         </form>
       )}
     </section>
