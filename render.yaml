@@ -1,0 +1,20 @@
+# Render Blueprint: Render reads this file and sets up the website for you.
+services:
+  - type: web
+    name: flowvault
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NEXT_TELEMETRY_DISABLED
+        value: "1"
+      # These two are public (they are sent to every browser), so they are safe to keep here.
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        value: https://ssdxnmegivdgugiceany.supabase.co
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        value: sb_publishable_6j2SA8dJrqD91wmVeNVHFw_nBwHUOdf
