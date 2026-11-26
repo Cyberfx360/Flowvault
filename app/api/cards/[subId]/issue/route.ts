@@ -34,8 +34,8 @@ export async function POST(_req: Request, { params }: { params: Promise<{ subId:
     return NextResponse.json({ ok: true, pending: true });
   } catch (e) {
     console.error(e);
-    await admin.rpc("fv_server_card_request_failed", { p_subscription: subId });
     const msg = (e as { providerMessage?: string }).providerMessage;
+    await admin.rpc("fv_server_card_request_failed", { p_subscription: subId, p_error: msg || (e instanceof Error ? e.message : "No reply") });
     return NextResponse.json({ error: msg ? `Card not made. Maplerad said: ${msg}` : "The card company didn't respond. Please try again." }, { status: 502 });
   }
 }

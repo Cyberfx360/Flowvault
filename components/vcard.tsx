@@ -52,6 +52,7 @@ export function SubCard({ sub, card, autoReveal }: { sub: Sub; card: Card | unde
           <div><div className="lbl">CVV</div><div className="val">{shown ? shown.cvv : "•••"}</div></div>
         </div>
       </div>
+      {card?.status === "failed" && card.last_error && <div className="error" role="alert">Maplerad said: {card.last_error}</div>}
       {card?.status === "failed" && (
         <button className="btn ghost block" onClick={async () => { try { await cardsApi.issue(sub.id); await reload(); } catch (e) { toast(e instanceof Error ? e.message : "Couldn't retry"); } }}>Try making the card again</button>
       )}

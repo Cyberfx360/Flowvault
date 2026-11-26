@@ -19,7 +19,7 @@ export default function Home() {
   const on = subs.filter((s) => s.is_on);
   const monthly = on.reduce((a, s) => a + monthlyKobo(s, usdRate), 0);
   const months = monthly ? balance / monthly : 0;
-  const upcoming = [...on].sort((a, b) => +nextCharge(a.billing_day) - +nextCharge(b.billing_day)).slice(0, 3);
+  const upcoming = [...on].sort((a, b) => +nextCharge(a.billing_day, a.created_at) - +nextCharge(b.billing_day, b.created_at)).slice(0, 3);
   const hour = new Date().getHours();
   const hello = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
@@ -53,7 +53,7 @@ export default function Home() {
           {upcoming.length ? upcoming.map((s) => (
             <Link key={s.id} className="item" href={`/subs/${s.id}`}>
               <Badge name={s.name} color={s.color} />
-              <span className="meta"><span className="name">{s.name}</span><span className="small">{shortDate(nextCharge(s.billing_day))}</span></span>
+              <span className="meta"><span className="name">{s.name}</span><span className="small">{shortDate(nextCharge(s.billing_day, s.created_at))}</span></span>
               <span className="amt num">{money(s.price_minor, s.currency)}</span>
             </Link>
           )) : <Link href="/subs" className="empty">No subscriptions yet. Add your first one.</Link>}

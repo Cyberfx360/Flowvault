@@ -65,12 +65,17 @@ export const maplerad: CardProvider & {
 
   /** Starts card creation and returns Maplerad's tracking reference. The card arrives by webhook. */
   async requestCard(customerId, brand = "VISA") {
-    const data = await call<{ reference?: string; id?: string }>("POST", "/issuing", {
+    const data = await call<Record<string, unknown>>("POST", "/issuing", {
       customer_id: customerId, currency: "USD", type: "VIRTUAL", auto_approve: true, brand,
       amount: 200, // first funding in cents; Maplerad's default
     });
-    const ref = data.reference ?? data.id; // VERIFY
-    if (!ref) throw new Error("Maplerad didn't return a card reference");
+    const card = (data.card ?? {}) as Record<string, unknown>;
+    const ref = data.reference ?? data.id ?? card.reference ?? card.id; // VERIFY in sandbox
+    if (typeof ref !== "string" || !ref) {
+      const err = new Error("Maplerad didn't return a card reference: " + JSON.stringify(data).slice(0, 300)) as Error & { providerMessage?: string };
+      err.providerMessage = "unexpected reply " + JSON.stringify(data).slice(0, 200);
+      throw err;
+    }
     return ref;
   },
 

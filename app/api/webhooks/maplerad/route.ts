@@ -10,7 +10,8 @@ import { adminClient } from "@/lib/server-supabase";
  */
 type Body = {
   event?: string; eventType?: string; reference?: string;
-  payload?: { reference?: string };
+  payload?: { reference?: string; reason?: string };
+  reason?: string;
   card?: { id: string; masked_pan?: string; issuer?: string };
   card_id?: string; type?: string; mode?: string; status?: string;
   authorization_amount?: number; authorization_currency?: string; amount?: number; currency?: string;
@@ -29,7 +30,8 @@ export async function POST(req: Request) {
     await admin.rpc("fv_server_attach_card", { p_reference: b.reference, p_card_id: b.card.id, p_last4: last4, p_network: network });
   } else if (event === "issuing.created.failed") {
     const ref = b.reference ?? b.payload?.reference;
-    if (ref) await admin.rpc("fv_server_card_failed", { p_reference: ref });
+    const reason = b.reason ?? b.payload?.reason ?? "Maplerad rejected the card";
+    if (ref) await admin.rpc("fv_server_card_failed_reason", { p_reference: ref, p_error: reason });
   } else if (event === "issuing.transaction" && b.card_id && b.mode === "DEBIT" && b.type === "AUTHORIZATION") {
     // Record the charge on the user's wallet ledger. (Declines on frozen cards happen at Maplerad;
     // showing those in History is a follow-up once we've seen real DECLINE payloads.)

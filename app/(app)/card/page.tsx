@@ -20,12 +20,13 @@ export default function CardsPage() {
         {subs.length ? subs.map((s) => {
           const c = cardFor(s.id);
           const frozen = !s.is_on || c?.frozen;
+          const label = c?.status === "failed" ? "Not made" : c?.status === "pending" ? "Making" : frozen ? "Frozen" : "Active";
           return (
             <Link key={s.id} className="item" href={`/subs/${s.id}`}>
               <Badge name={s.name} color={s.color} dim={frozen} />
               <span className="meta"><span className="name">{s.name}</span>
                 <span className="small num">{c?.provider === "mock" ? "Test · " : ""}{c?.status === "active" ? `${c.network} •• ${c.last4}` : c?.status === "failed" ? "Card failed" : "Card on its way"} · {money(s.price_minor, s.currency)}/mo</span></span>
-              <span className={"pill " + (frozen ? "warn" : "ok")}>{frozen ? "Frozen" : "Active"}</span>
+              <span className={"pill " + (label === "Active" ? "ok" : label === "Not made" ? "bad" : "warn")}>{label}</span>
               <Chevron />
             </Link>
           );

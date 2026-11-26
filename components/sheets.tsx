@@ -46,7 +46,7 @@ export function TurnOffSheet({ sub, onClose }: { sub: Sub | null; onClose: () =>
   return (
     <Sheet open onClose={onClose} label={`Turn off ${sub.name}`}>
       <h2 style={{ fontSize: 22 }}>Turn off {sub.name}?</h2>
-      <p className="sub">Flowvault will freeze {sub.name}&apos;s card, so its next charge of <b className="num">{money(sub.price_minor, sub.currency)}</b> on {shortDate(nextCharge(sub.billing_day))} is declined. You can switch it back on any time before then.</p>
+      <p className="sub">Flowvault will freeze {sub.name}&apos;s card, so its next charge of <b className="num">{money(sub.price_minor, sub.currency)}</b> on {shortDate(nextCharge(sub.billing_day, sub.created_at))} is declined. You can switch it back on any time before then.</p>
       <button className="btn danger block" onClick={off}>Turn off {sub.name}</button>
       <button className="btn ghost block" onClick={onClose}>Keep it on</button>
     </Sheet>

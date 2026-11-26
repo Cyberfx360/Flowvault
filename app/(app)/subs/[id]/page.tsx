@@ -55,9 +55,9 @@ export default function Detail() {
       <p className="sub small" style={{ textAlign: "center" }}>This card is only for {s.name}. Enter its number in your {s.name} account.</p>
       <div className="stat">
         <div><span>Monthly price</span><b className="num">{money(s.price_minor, s.currency)}</b></div>
-        <div><span>Next charge</span><b>{s.is_on ? shortDate(nextCharge(s.billing_day)) : "None"}</b></div>
+        <div><span>Next charge</span><b>{s.is_on ? shortDate(nextCharge(s.billing_day, s.created_at)) : "None"}</b></div>
         <div><span>Paid this year</span><b className="num">{naira(paidYear)}</b></div>
-        <div><span>Card</span><b>{s.is_on ? "Active" : "Frozen"}</b></div>
+        <div><span>Card</span><b>{card?.status === "failed" ? "Not made" : card?.status === "pending" ? "Being made" : s.is_on ? "Active" : "Frozen"}</b></div>
       </div>
       {s.currency === "USD" && <p className="sub small" style={{ textAlign: "center" }}>About {naira(monthlyKobo(s, usdRate))} at today&apos;s rate of ₦{usdRate.toLocaleString("en-NG")} per $1.</p>}
       <div className="panel list">

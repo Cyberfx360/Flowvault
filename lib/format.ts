@@ -14,14 +14,19 @@ export const ordinal = (n: number) => {
 };
 
 /** Next date this billing day comes round, from today. */
-export const nextCharge = (day: number, from = new Date()) => {
+/**
+ * Next billing date. A subscription added today whose billing day is today was already
+ * billed today (before it had its Flowvault card), so its next charge is next month.
+ */
+export const nextCharge = (day: number, addedAt?: string, from = new Date()) => {
   const d = new Date(from.getFullYear(), from.getMonth(), day);
-  if (day < from.getDate()) d.setMonth(d.getMonth() + 1);
+  const addedToday = !!addedAt && new Date(addedAt).toDateString() === from.toDateString();
+  if (day < from.getDate() || (addedToday && day === from.getDate())) d.setMonth(d.getMonth() + 1);
   return d;
 };
 
 export const shortDate = (d: Date) =>
-  d.toLocaleDateString("en-NG", { day: "numeric", month: "short" });
+  d.toDateString() === new Date().toDateString() ? "Today" : d.toLocaleDateString("en-NG", { day: "numeric", month: "short" });
 
 export const dayLabel = (iso: string) => {
   const d = new Date(iso), today = new Date();

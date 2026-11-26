@@ -42,7 +42,7 @@ export default function Subs() {
             <Link className="item" style={{ padding: 0, border: 0, flex: 1, minWidth: 0 }} href={`/subs/${s.id}`}>
               <Badge name={s.name} color={s.color} dim={!s.is_on} />
               <span className="meta"><span className="name">{s.name}</span>
-                <span className="small num">{money(s.price_minor, s.currency)} · {s.is_on ? "next " + shortDate(nextCharge(s.billing_day)) : "off"}</span></span>
+                <span className="small num">{money(s.price_minor, s.currency)} · {s.is_on ? "next " + shortDate(nextCharge(s.billing_day, s.created_at)) : "off"}</span></span>
             </Link>
             <Switch on={s.is_on} label={`${s.name} on`} onChange={() => toggle(s)} />
           </div>

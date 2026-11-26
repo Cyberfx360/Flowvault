@@ -13,7 +13,7 @@ export type Sub = {
 export type Card = {
   subscription_id: string; holder_name: string; last4: string | null; exp_month: number | null; exp_year: number | null;
   network: string; currency: "NGN" | "USD"; frozen: boolean; status: "pending" | "active" | "failed" | "terminated";
-  provider: string;
+  provider: string; last_error?: string | null;
 };
 export type Txn = {
   id: string; kind: "topup" | "charge"; status: "success" | "declined"; amount_kobo: number;
