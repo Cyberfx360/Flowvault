@@ -83,6 +83,7 @@ export default function ProfilePage() {
 
       <button className="btn ghost block" onClick={signOut}><Logout />Sign out</button>
       <p className="sub small" style={{ textAlign: "center" }}>Money in Flowvault can only pay subscriptions. It can&apos;t be withdrawn.</p>
+      <p className="sub small" style={{ textAlign: "center", marginTop: -8 }}><Link href="/terms">Terms and Conditions</Link> · <Link href="/privacy">Privacy Policy</Link></p>
 
       <EditSheet open={editing} onClose={() => setEditing(false)} name={profile?.full_name ?? ""} phone={localPhone(profile?.phone)} locked={!!profile?.verified}
         save={async (n, p) => { const ok = await act("update_profile", { p_full_name: n, p_phone: p }); if (ok !== undefined) { toast("Details saved"); setEditing(false); } }} />

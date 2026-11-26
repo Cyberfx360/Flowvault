@@ -19,7 +19,7 @@ export default function Signup() {
     const { data, error } = await supabase.auth.signUp({
       email: String(f.get("email")).trim(),
       password: String(f.get("password")),
-      options: { data: { full_name: String(f.get("name")).trim(), phone: "+234" + String(f.get("phone")).replace(/\D/g, "").replace(/^0/, "") } },
+      options: { data: { full_name: String(f.get("name")).trim(), phone: "+234" + String(f.get("phone")).replace(/\D/g, "").replace(/^0/, ""), terms_accepted_at: new Date().toISOString() } },
     });
     setBusy(false);
     if (error) return setError(error.message);
@@ -47,6 +47,8 @@ export default function Signup() {
           <div className="field"><label htmlFor="email">Email</label><input id="email" name="email" type="email" required autoComplete="email" /></div>
           <div className="field"><label htmlFor="password">Password</label><input id="password" name="password" type="password" required minLength={8} autoComplete="new-password" /><span className="hint">At least 8 characters.</span></div>
           <div className="callout"><Info /><span>Money you add to Flowvault can only pay subscriptions. It can't be withdrawn back to your bank.</span></div>
+          <label className="agree"><input id="agree" name="agree" type="checkbox" required />
+            <span>I agree to the <Link href="/terms" target="_blank">Terms and Conditions</Link> and <Link href="/privacy" target="_blank">Privacy Policy</Link>.</span></label>
           {error && <div className="error" role="alert">{error}</div>}
           <button className="btn primary block" type="submit" disabled={busy}>{busy ? "Creating…" : "Create account"}</button>
         </form>

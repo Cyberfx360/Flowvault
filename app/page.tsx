@@ -25,6 +25,7 @@ export default function Welcome() {
             <Link className="btn primary block" href="/signup">Create account</Link>
             <Link className="btn ghost block" href="/login">I already have an account</Link>
           </div>
+          <p className="sub small" style={{ textAlign: "center" }}><Link href="/terms">Terms</Link> · <Link href="/privacy">Privacy</Link></p>
         </div>
       </section>
     </div>
