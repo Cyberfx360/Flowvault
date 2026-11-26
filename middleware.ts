@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const APP = ["/home", "/card", "/subs", "/history", "/verify", "/profile"];
+const APP = ["/home", "/card", "/subs", "/history", "/verify", "/profile", "/topup"];
 
 // Keeps the login fresh and sends people to the right place.
 export async function middleware(req: NextRequest) {

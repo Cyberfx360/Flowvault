@@ -1,4 +1,5 @@
 import "server-only";
+import { networkFromPan } from "./network";
 import crypto from "node:crypto";
 import type { CardProvider } from "./types";
 
@@ -131,7 +132,7 @@ export const maplerad: CardProvider & {
     const c = await call<{ id?: string; masked_pan?: string; card_number?: string; issuer?: string; brand?: string; status?: string }>("GET", `/issuing/${idOrRef}`);
     const pan = c.masked_pan ?? c.card_number;
     if (!c.id || !pan) return null;
-    return { id: c.id, last4: pan.slice(-4), network: (c.issuer ?? c.brand) === "MASTERCARD" ? "Mastercard" : "Visa" };
+    return { id: c.id, last4: pan.slice(-4), network: networkFromPan(pan) ?? (/master/i.test(String(c.issuer ?? c.brand ?? "")) ? "Mastercard" : "Visa") };
   },
 
   async fund(cardId, cents) { await call("POST", `/issuing/${cardId}/fund`, { amount: cents }); },

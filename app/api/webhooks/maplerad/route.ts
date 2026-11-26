@@ -1,3 +1,4 @@
+import { networkFromPan } from "@/lib/cards/network";
 import { NextResponse } from "next/server";
 import { verifyWebhook } from "@/lib/cards/maplerad";
 import { adminClient } from "@/lib/server-supabase";
@@ -26,7 +27,8 @@ export async function POST(req: Request) {
 
   if (event === "issuing.created.successful" && b.card && b.reference) {
     const last4 = (b.card.masked_pan ?? "").slice(-4);
-    const network = b.card.issuer === "MASTERCARD" ? "Mastercard" : "Visa";
+    // The card number decides Visa vs Mastercard; the issuer field is only a fallback.
+    const network = networkFromPan(b.card.masked_pan) ?? (/master/i.test(String(b.card.issuer ?? "")) ? "Mastercard" : "Visa");
     await admin.rpc("fv_server_attach_card", { p_reference: b.reference, p_card_id: b.card.id, p_last4: last4, p_network: network });
   } else if (event === "issuing.created.failed") {
     const ref = b.reference ?? b.payload?.reference;

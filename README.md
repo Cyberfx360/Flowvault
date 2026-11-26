@@ -147,8 +147,13 @@ Yes, Maplerad's live mode only accepts calls from server IP addresses you have r
 
 Maplerad's webhooks come from a fixed list of their own IPs (in their docs). The webhook route already checks Maplerad's signature, which is the stronger check.
 
-### Top-ups
+### Top-ups (Paystack)
 
-1. Use the card provider's own virtual bank accounts for transfers, and Paystack for debit card top-ups. Each sends a webhook when money arrives. Verify it and call `flowvault.credit_wallet()` from the server with the service role key.
-2. Delete `fv_mock_top_up` and `fv_mock_charge`, and the `mock_pan` / `mock_cvv` columns once no mock cards are left.
-3. Check the "no withdrawals" rule with a lawyer before launch.
+Users add money by **debit card** or **bank transfer** on Paystack's page, then come back to `/topup`.
+Money is added only after the server checks the payment with Paystack, and each payment is added once.
+
+On Render > Environment, add `PAYSTACK_SECRET_KEY` (test key `sk_test_...` first). In Paystack >
+Settings > API Keys & Webhooks, set the **Webhook URL** to `https://<your app>/api/webhooks/paystack`.
+Without the key the app keeps its pretend top-ups. The first **live** (`sk_live_`) payment switches
+pretend top-ups off for good, so nobody can add free money once real money flows.
+

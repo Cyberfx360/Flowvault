@@ -5,16 +5,13 @@ import { Copy, Eye } from "./icons";
 import { cardsApi } from "@/lib/cards-client";
 import type { Card, Sub } from "@/lib/supabase";
 import type { CardDetails } from "@/lib/cards/types";
+import { networkFromPan } from "@/lib/cards/network";
 
 const group = (pan: string) => pan.replace(/(\d{4})(?=\d)/g, "$1 ");
 
-/** Visa or Mastercard: from the card number when we have it (4 = Visa, 51-55 / 2221-2720 = Mastercard), else what the card company told us. */
+/** Visa or Mastercard: the card number decides when it's showing, else what's stored (the server keeps it in line with the number). */
 function networkOf(pan: string | undefined, stored: string | undefined): "Visa" | "Mastercard" {
-  const d = (pan ?? "").replace(/\D/g, "");
-  if (d.startsWith("4")) return "Visa";
-  const n2 = Number(d.slice(0, 2)), n4 = Number(d.slice(0, 4));
-  if ((n2 >= 51 && n2 <= 55) || (n4 >= 2221 && n4 <= 2720)) return "Mastercard";
-  return /master/i.test(stored ?? "") ? "Mastercard" : "Visa";
+  return networkFromPan(pan) ?? (/master/i.test(stored ?? "") ? "Mastercard" : "Visa");
 }
 
 /** The network mark on the card face. */
@@ -36,7 +33,7 @@ export function SubCard({ sub, card, autoReveal }: { sub: Sub; card: Card | unde
   const ready = card?.status === "active";
 
   async function details() {
-    try { return await cardsApi.reveal(sub.id); } catch (e) { toast(e instanceof Error ? e.message : "Couldn't load card details"); return null; }
+    try { const d = await cardsApi.reveal(sub.id); if (networkFromPan(d.pan) && networkFromPan(d.pan) !== card?.network) reload(); return d; } catch (e) { toast(e instanceof Error ? e.message : "Couldn't load card details"); return null; }
   }
   // While the card company is still making the card, check again every few seconds (up to 2 minutes).
   useEffect(() => {

@@ -13,8 +13,17 @@ export function TopUpSheet({ open, onClose }: { open: boolean; onClose: () => vo
   const { act, toast } = useStore();
   const [amt, setAmt] = useState(2000000);
   const [busy, setBusy] = useState(false);
+  const [real, setReal] = useState<boolean | null>(null); // is Paystack switched on?
+  useEffect(() => { if (open && real === null) fetch("/api/topup").then((r) => r.json()).then((d) => setReal(!!d.available)).catch(() => setReal(false)); }, [open, real]);
   const go = async (method: "bank" | "card") => {
     setBusy(true);
+    if (real) {
+      // Real money: open Paystack's payment page. The wallet is credited once Paystack confirms.
+      const r = await fetch("/api/topup", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ amountKobo: amt, channel: method === "card" ? "card" : "bank_transfer" }) })
+        .then(async (x) => ({ ok: x.ok, ...(await x.json().catch(() => ({}))) })).catch(() => ({ ok: false, error: "No connection" }));
+      if (r.ok && r.url) { window.location.href = r.url; return; }
+      setBusy(false); toast(r.error || "Couldn't start the payment"); return;
+    }
     const r = await act("mock_top_up", { p_amount_kobo: amt, p_method: method });
     setBusy(false);
     if (r !== undefined) { onClose(); toast(`${naira(amt)} added to your wallet`); }
@@ -28,10 +37,11 @@ export function TopUpSheet({ open, onClose }: { open: boolean; onClose: () => vo
           <button key={v} aria-pressed={v === amt} onClick={() => setAmt(v)}>{naira(v)}</button>
         ))}
       </div>
-      <div className="callout warn"><Warn /><span><b>Test mode.</b> No real money moves yet. Tapping below adds pretend money so you can try the app. Real bank transfer and debit card top-ups come once a payment provider is connected.</span></div>
-      <div className="callout warn"><Warn /><span>Top-ups are final. Flowvault money pays subscriptions only and can't be withdrawn.</span></div>
-      <button className="btn tint block" disabled={busy} onClick={() => go("bank")}>Add {naira(amt)} by bank transfer</button>
-      <button className="btn ghost block" disabled={busy} onClick={() => go("card")}>Pay with debit card instead</button>
+      {real === false && <div className="callout warn"><Warn /><span><b>Test mode.</b> No real money moves yet. Tapping below adds pretend money so you can try the app.</span></div>}
+      {real && <div className="callout"><Warn /><span>You&apos;ll pay securely on Paystack, then come back here. Bank transfer gives you an account number to send the money to.</span></div>}
+      <div className="callout warn"><Warn /><span>Top-ups are final. Flowvault money pays subscriptions only and can&apos;t be withdrawn.</span></div>
+      <button className="btn tint block" disabled={busy || real === null} onClick={() => go("bank")}>{busy ? "Opening Paystack…" : `Add ${naira(amt)} by bank transfer`}</button>
+      <button className="btn ghost block" disabled={busy || real === null} onClick={() => go("card")}>Pay with debit card instead</button>
     </Sheet>
   );
 }
