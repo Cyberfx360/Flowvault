@@ -56,6 +56,14 @@ export async function enrollCustomer(k: KycDetails): Promise<string> {
   return id;
 }
 
+/** What the wallets look like to the key on this server (for "insufficient balance" debugging). */
+export async function walletsSummary(): Promise<string> {
+  const data = await call<unknown>("GET", "/wallets");
+  const list = (Array.isArray(data) ? data : []) as Record<string, unknown>[];
+  if (!list.length) return "no wallets found for this key";
+  return list.map((w) => `${w.currency ?? "?"} available ${w.available_balance ?? w.balance ?? "?"}`).join(", ");
+}
+
 export type IdType = "NIN" | "PASSPORT" | "DRIVERS_LICENSE" | "VOTERS_CARD";
 /** Tier 2: an ID document plus a selfie. Maplerad only makes cards for tier 2 customers. */
 /** Photos go as base64 data URIs ("data:image/jpeg;base64,..."); Maplerad rejects links. */

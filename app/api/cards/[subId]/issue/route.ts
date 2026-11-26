@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { maplerad } from "@/lib/cards";
+import { maplerad, providerName } from "@/lib/cards";
+import { walletsSummary } from "@/lib/cards/maplerad";
 import { load } from "@/lib/cards/route-helpers";
 import { adminClient } from "@/lib/server-supabase";
 
@@ -38,7 +39,12 @@ export async function POST(_req: Request, { params }: { params: Promise<{ subId:
     return NextResponse.json({ ok: true, pending: true });
   } catch (e) {
     console.error(e);
-    const msg = (e as { providerMessage?: string }).providerMessage;
+    let msg = (e as { providerMessage?: string }).providerMessage;
+    // While testing (CARD_PROVIDER not set to maplerad yet), show which Maplerad wallet this server's key sees.
+    if (msg && /insufficient/i.test(msg) && providerName === "mock") {
+      try { msg += ` (Maplerad wallets for the key on Render: ${await walletsSummary()})`; }
+      catch (w) { msg += ` (couldn't read Maplerad wallets: ${(w as { providerMessage?: string }).providerMessage ?? "no reply"})`; }
+    }
     await admin.rpc("fv_server_card_request_failed", { p_subscription: subId, p_error: msg || (e instanceof Error ? e.message : "No reply") });
     return NextResponse.json({ error: msg ? `Card not made. Maplerad said: ${msg}` : "The card company didn't respond. Please try again." }, { status: 502 });
   }
