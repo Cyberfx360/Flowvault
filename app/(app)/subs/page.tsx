@@ -4,12 +4,13 @@ import { useState } from "react";
 import { monthlyKobo, useStore } from "@/components/store";
 import { AddSubSheet, TurnOffSheet } from "@/components/sheets";
 import { Badge, Switch } from "@/components/ui";
+import { cardsApi } from "@/lib/cards-client";
 import { Plus } from "@/components/icons";
 import { money, naira, nextCharge, shortDate } from "@/lib/format";
 import type { Sub } from "@/lib/supabase";
 
 export default function Subs() {
-  const { ready, subs, usdRate, act, toast } = useStore();
+  const { ready, subs, usdRate, run, toast } = useStore();
   const [filter, setFilter] = useState<"all" | "on" | "off">("all");
   const [adding, setAdding] = useState(false);
   const [offing, setOffing] = useState<Sub | null>(null);
@@ -19,8 +20,8 @@ export default function Subs() {
   const list = subs.filter((s) => filter === "all" || (filter === "on") === s.is_on);
   const toggle = async (s: Sub) => {
     if (s.is_on) return setOffing(s);
-    const r = await act("update_subscription", { p_id: s.id, p_is_on: true });
-    if (r !== undefined) toast(`${s.name} is back on`);
+    const r = await run(() => cardsApi.power(s.id, true));
+    if (r !== undefined) toast(`${s.name} is back on. Its card is unfrozen.`);
   };
 
   return (
@@ -49,7 +50,7 @@ export default function Subs() {
           <div className="empty">{subs.length ? "Nothing here." : <>No subscriptions yet.<br /><button className="btn link" onClick={() => setAdding(true)}>Add your first one</button></>}</div>
         )}
       </div>
-      <p className="sub small" style={{ textAlign: "center" }}>Turning one off stops the next charge on your card. You keep access until the current period ends.</p>
+      <p className="sub small" style={{ textAlign: "center" }}>Each subscription has its own card. Turning one off freezes that card, so its next charge is declined. You keep access until the current period ends.</p>
       <AddSubSheet open={adding} onClose={() => setAdding(false)} />
       <TurnOffSheet sub={offing} onClose={() => setOffing(null)} />
     </section>

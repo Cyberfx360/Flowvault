@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Flowvault",
     short_name: "Flowvault",
-    description: "One card for every subscription.",
+    description: "A card for every subscription.",
     start_url: "/home",
     display: "standalone",
     background_color: "#f7f7f5",

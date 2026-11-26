@@ -39,7 +39,7 @@ export default function Signup() {
     <div className="shell">
       <section className="screen">
         <div className="topbar"><Link className="icon-btn" href="/" aria-label="Back"><Back /></Link><Logo size={36} /><span style={{ width: 44 }} /></div>
-        <div className="stack"><h2>Create your Flowvault</h2><p className="sub">It takes a minute. Your virtual card is ready as soon as you're in.</p></div>
+        <div className="stack"><h2>Create your Flowvault</h2><p className="sub">It takes a minute. Add a subscription and its card is made for you.</p></div>
         <form className="stack" style={{ gap: 16 }} onSubmit={submit}>
           <div className="field"><label htmlFor="name">Full name</label><input id="name" name="name" required autoComplete="name" /></div>
           <div className="field"><label htmlFor="phone">Phone number</label>

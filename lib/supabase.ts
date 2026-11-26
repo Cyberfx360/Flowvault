@@ -9,9 +9,11 @@ export type Sub = {
   id: string; name: string; plan: string; currency: "NGN" | "USD"; price_minor: number;
   billing_day: number; color: string; is_on: boolean; price_guard: boolean; remind: boolean; created_at: string;
 };
+/** Every subscription has its own card. */
 export type Card = {
-  holder_name: string; last4: string; exp_month: number; exp_year: number; network: string;
-  frozen: boolean;
+  subscription_id: string; holder_name: string; last4: string | null; exp_month: number | null; exp_year: number | null;
+  network: string; currency: "NGN" | "USD"; frozen: boolean; status: "pending" | "active" | "failed" | "terminated";
+  provider: string;
 };
 export type Txn = {
   id: string; kind: "topup" | "charge"; status: "success" | "declined"; amount_kobo: number;

@@ -1,20 +1,23 @@
 # Flowvault
 
-One card for every subscription. Top up a Naira wallet (no withdrawals), get a Visa virtual card, pay your subscriptions with it, and switch any subscription off so its next charge is declined.
+A card for every subscription. Top up a Naira wallet (no withdrawals). Each subscription you add gets **its own virtual card**, and you give that company only that card's number. Switching a subscription off **freezes its card**, so the company's next charge is declined.
 
 Built with **Next.js** (the app) and **Supabase** (logins + database).
 
-> **Test mode.** Payments, the virtual card and merchant charges are pretend for now. "Add money" adds test money, and each subscription has a "Pretend it charges the card" button so you can see approvals and declines. Real money needs a card-issuing provider and a payment gateway (see "Going live" below).
+> **Test mode.** Payments, cards and merchant charges are pretend for now. "Add money" adds test money, and each subscription has a "Pretend it charges its card now" button so you can see approvals and declines. The code to make real cards with **Maplerad** is written but switched off until there are API keys (see "Going live" below).
 
 ## What's in here
 
 | Folder | What it does |
 | --- | --- |
-| `app/` | The screens: welcome, sign up, sign in, home, card, subscriptions, subscription detail, history |
-| `components/` | Shared pieces: data store, bottom sheets (add money, add subscription, turn off), switches, icons |
-| `lib/` | Supabase connection and money/date formatting |
+| `app/` | The screens: welcome, sign up, sign in, home, cards, subscriptions, subscription detail (with its card), history |
+| `app/api/cards/` | Server routes that talk to the card company: switch on/off (freeze), show card details, make a card, remove |
+| `app/api/webhooks/maplerad/` | Where Maplerad tells us a card was made or a charge happened |
+| `components/` | Shared pieces: data store, card, bottom sheets (add money, add subscription, turn off), switches, icons |
+| `lib/cards/` | The card company adapter: `types.ts` (what any provider must do), `mock.ts`, `maplerad.ts` |
+| `lib/` | Supabase connections and money/date formatting |
 | `middleware.ts` | Keeps you signed in and sends signed-out people to the sign-in page |
-| `supabase/migrations/0001_init.sql` | The database: tables, security rules, and every money rule |
+| `supabase/migrations/` | The database: `0001_init.sql` (tables, money rules) and `0002_card_per_sub.sql` (one card per subscription) |
 
 ## Where the database lives
 
@@ -22,7 +25,7 @@ For now Flowvault shares the **recio-exchange** Supabase project with azaplug, t
 
 - All Flowvault tables are in their own `flowvault` schema. Nothing of azaplug's was changed.
 - The app talks to the database only through functions whose names start with `fv_`.
-- Flowvault does not add anything to azaplug's sign-up. It creates a wallet and card the first time someone opens the app.
+- Flowvault does not add anything to azaplug's sign-up. It creates a wallet the first time someone opens the app, and a card each time they add a subscription.
 
 What *is* shared: the Supabase login system and its settings (email templates, allowed website addresses). Azaplug has its own separate user list, so azaplug accounts don't log into Flowvault. One side effect: azaplug's existing sign-up hook adds an empty row to azaplug's `public.profiles` table each time someone creates a Flowvault account.
 
@@ -35,7 +38,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_6j2SA8dJrqD91wmVeNVHFw_nBwHUOdf
 
 ### Moving Flowvault to its own project later
 
-1. Create a new Supabase project and run `supabase/migrations/0001_init.sql` in it.
+1. Create a new Supabase project and run the files in `supabase/migrations/` in it, in order.
 2. Copy the data across: `pg_dump --data-only --schema=flowvault <old db url> | psql <new db url>`. Login accounts (`auth.users`) for Flowvault users must be copied first, or users sign up again.
 3. Change the two environment variables above to the new project's URL and key, and redeploy.
 4. In the old project, run `drop schema flowvault cascade;` and drop the `public.fv_*` functions.
@@ -43,7 +46,9 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_6j2SA8dJrqD91wmVeNVHFw_nBwHUOdf
 ### How the money rules work
 - Money is stored in **kobo** (₦1 = 100 kobo) so there are no rounding mistakes.
 - The browser can't touch the tables at all. Every read and change goes through an `fv_` function that only works on the signed-in user's own data, so nobody can edit their balance from the browser.
-- When a service charges the card, `authorize_charge` approves it only if: the card isn't frozen, the service is on your list, it's switched **on**, the price hasn't jumped more than 10% (if price guard is on), and there's enough money. Dollar prices are converted at the rate in `flowvault.fx_rates`.
+- Every subscription has exactly one card, and each card belongs to exactly one subscription.
+- Switching a subscription off freezes its card (at the card company first, then in the database), switching it on unfreezes it, and removing it ends the card for good.
+- When a charge lands on a card, `authorize_card_charge` approves it only if: the card is ready and not frozen, its subscription is **on**, the price hasn't jumped more than 10% (if price guard is on), and there's enough money in the wallet. Dollar prices are converted at the rate in `flowvault.fx_rates`.
 
 ## Run it on your computer
 
@@ -83,8 +88,46 @@ Every time new code is pushed to GitHub, Render rebuilds the site by itself.
 
 ## Going live with real money (not done yet)
 
-1. Pick a Nigerian provider that issues **Visa virtual cards** and gives you a **card authorization webhook** (they ask your server "approve this charge?" in real time).
-2. Pick a gateway for **top-ups** by bank transfer and debit card (it gives each user a dedicated account number and sends a webhook when money arrives).
-3. Write two server endpoints (e.g. Supabase Edge Functions) that verify each webhook and call `flowvault.credit_wallet()` and `flowvault.authorize_charge()` with the service role key.
-4. Delete `fv_mock_top_up`, `fv_mock_charge` and the `mock_pan` / `mock_cvv` columns, and fetch card details from the provider instead.
-5. Do KYC (BVN/NIN checks) at sign-up, which card issuers require.
+### Cards: Maplerad
+
+The adapter is in `lib/cards/maplerad.ts`. It was written from Maplerad's docs (Nov 2026) and has not run against Maplerad yet. Lines marked `VERIFY` are guesses where the docs are silent, so check them in the sandbox first.
+
+What Maplerad's docs say, and what it means for Flowvault:
+
+- **Cards are US dollar Visa or Mastercard only.** Naira-priced services (DStv, GOtv, MTN…) also get a dollar card, and the bank converts. Ask Maplerad about cross-border and exchange fees on Naira merchants. If those are bad, Naira subscriptions may need a second provider with Naira cards.
+- **Cards are prepaid.** Money has to be put on a card before a company can charge it. Flowvault will need a small daily job that, a day before each subscription's billing day, moves that month's price from the user's wallet onto that card (`maplerad.fund`). That job isn't written yet.
+- **Making a card takes a moment.** We ask for a card and get a tracking reference. Maplerad then calls our webhook with the finished card, and the app shows "Making your card…" until then.
+- **ID checks first.** Before a user's first real card, Maplerad needs them enrolled with BVN, date of birth, phone and address (`enrollCustomer`). That screen isn't built yet.
+
+Steps:
+
+1. Sign up at maplerad.com with Flowvault's registered business (CAC documents), and get **sandbox** keys from **Settings > API**.
+2. In Render, open the flowvault service > **Environment** and add these as secret values (never in `render.yaml` or GitHub):
+   - `CARD_PROVIDER` = `maplerad`
+   - `MAPLERAD_SECRET_KEY` = your Maplerad secret key
+   - `MAPLERAD_WEBHOOK_SECRET` = the `whsec_…` value from Maplerad's webhook settings
+   - `SUPABASE_SERVICE_ROLE_KEY` = from Supabase **recio-exchange > Project Settings > API keys** (secret key)
+3. In the Maplerad dashboard, set the webhook URL to `https://flowvault-ndrx.onrender.com/api/webhooks/maplerad`.
+4. Tell the database to use Maplerad for new cards: `update flowvault.settings set card_provider = 'maplerad';`
+5. Build the ID-check screen and the daily card-funding job, test everything in the sandbox, then swap to live keys.
+
+All card company calls happen on the server (`app/api/...`). The secret key never reaches anyone's phone.
+
+### IP whitelisting
+
+Yes, Maplerad's live mode only accepts calls from server IP addresses you have registered with them. The sandbox doesn't need this. Live calls from any other address are refused with error 403, and the app shows "The card company didn't respond".
+
+1. **Find Render's addresses.** In the Render dashboard, open the flowvault service, click **Connect** (top right), then the **Outbound** tab. It lists the outbound IP addresses for the Frankfurt region. Send Maplerad all of them.
+2. **If Maplerad wants exactly one fixed IP**, Render's list won't do, because those addresses are shared and there are several. Two options:
+   - a "static IP" proxy add-on (for example QuotaGuard Static or Fixie). It has a monthly fee, and only the Maplerad calls go through it;
+   - or a small cheap server with a fixed IP (a VPS) that forwards only the Maplerad calls.
+
+   Either one is a small change in `lib/cards/maplerad.ts`, where all Maplerad calls go through a single `call()` function.
+
+Maplerad's webhooks come from a fixed list of their own IPs (in their docs). The webhook route already checks Maplerad's signature, which is the stronger check.
+
+### Top-ups
+
+1. Use the card provider's own virtual bank accounts for transfers, and Paystack for debit card top-ups. Each sends a webhook when money arrives. Verify it and call `flowvault.credit_wallet()` from the server with the service role key.
+2. Delete `fv_mock_top_up` and `fv_mock_charge`, and the `mock_pan` / `mock_cvv` columns once no mock cards are left.
+3. Check the "no withdrawals" rule with a lawyer before launch.

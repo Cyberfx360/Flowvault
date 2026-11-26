@@ -11,7 +11,7 @@ import { supabase } from "@/lib/supabase";
 import { Logo } from "@/components/logo";
 
 export default function Home() {
-  const { ready, profile, balance, subs, card, usdRate } = useStore();
+  const { ready, profile, balance, subs, cards, usdRate } = useStore();
   const router = useRouter();
   const [topup, setTopup] = useState(false);
   if (!ready) return <div className="loading">Loading…</div>;
@@ -61,8 +61,8 @@ export default function Home() {
       </div>
 
       <Link className="panel row" style={{ padding: "14px 16px" }} href="/card">
-        <div className="minicard"><b>Fv</b><span>•• {card?.last4}</span></div>
-        <div style={{ flex: 1 }}><div style={{ fontWeight: 500 }}>Your virtual card</div><div className="sub small">Use it to pay any subscription</div></div>
+        <div className="minicard"><b>Fv</b><span>×{cards.length}</span></div>
+        <div style={{ flex: 1 }}><div style={{ fontWeight: 500 }}>Your cards</div><div className="sub small">{cards.length ? `${cards.filter((c) => !c.frozen).length} active, one per subscription` : "Each subscription gets its own card"}</div></div>
         <Chevron />
       </Link>
 

@@ -6,6 +6,8 @@ import { Warn } from "./icons";
 import { useStore } from "./store";
 import { COLORS, money, naira, nextCharge, shortDate } from "@/lib/format";
 import type { Sub } from "@/lib/supabase";
+import { cardsApi } from "@/lib/cards-client";
+import { useRouter } from "next/navigation";
 
 export function TopUpSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { act, toast } = useStore();
@@ -35,16 +37,16 @@ export function TopUpSheet({ open, onClose }: { open: boolean; onClose: () => vo
 }
 
 export function TurnOffSheet({ sub, onClose }: { sub: Sub | null; onClose: () => void }) {
-  const { act, toast } = useStore();
+  const { run, toast } = useStore();
   if (!sub) return null;
   const off = async () => {
-    const r = await act("update_subscription", { p_id: sub.id, p_is_on: false });
-    if (r !== undefined) { onClose(); toast(`${sub.name} is off. Its next charge will be declined.`); }
+    const r = await run(() => cardsApi.power(sub.id, false));
+    if (r !== undefined) { onClose(); toast(`${sub.name} is off. Its card is frozen.`); }
   };
   return (
     <Sheet open onClose={onClose} label={`Turn off ${sub.name}`}>
       <h2 style={{ fontSize: 22 }}>Turn off {sub.name}?</h2>
-      <p className="sub">Flowvault will decline {sub.name}&apos;s next charge of <b className="num">{money(sub.price_minor, sub.currency)}</b> on {shortDate(nextCharge(sub.billing_day))}. You can switch it back on any time before then.</p>
+      <p className="sub">Flowvault will freeze {sub.name}&apos;s card, so its next charge of <b className="num">{money(sub.price_minor, sub.currency)}</b> on {shortDate(nextCharge(sub.billing_day))} is declined. You can switch it back on any time before then.</p>
       <button className="btn danger block" onClick={off}>Turn off {sub.name}</button>
       <button className="btn ghost block" onClick={onClose}>Keep it on</button>
     </Sheet>
@@ -52,7 +54,8 @@ export function TurnOffSheet({ sub, onClose }: { sub: Sub | null; onClose: () =>
 }
 
 export function AddSubSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { act, toast, subs } = useStore();
+  const { act, toast, subs, provider } = useStore();
+  const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [typed, setTyped] = useState("");
@@ -67,17 +70,18 @@ export function AddSubSheet({ open, onClose }: { open: boolean; onClose: () => v
     const day = Number(f.get("day"));
     if (!name || !(price > 0)) return setErr("Enter a name and a price.");
     setBusy(true); setErr("");
-    const r = await act("add_subscription", {
+    const r = await act<string>("add_subscription", {
       p_name: name, p_plan: String(f.get("plan")), p_currency: currency,
       p_price_minor: Math.round(price * 100), p_billing_day: day, p_color: brandFor(name).color ?? COLORS[subs.length % COLORS.length],
     });
+    if (r && provider !== "mock") await cardsApi.issue(r).catch((e) => toast(e.message));
     setBusy(false);
-    if (r !== undefined) { setTyped(""); onClose(); toast(`${name} added`); }
+    if (r) { setTyped(""); onClose(); toast(`${name} added with its own card`); router.push(`/subs/${r}`); }
   }
   return (
     <Sheet open={open} onClose={onClose} label="Add a subscription">
       <h2 style={{ fontSize: 22 }}>Add a subscription</h2>
-      <p className="sub">Add the services you pay with your Flowvault card. Only services on this list can charge it.</p>
+      <p className="sub">We&apos;ll make a card just for this service. You put that card&apos;s number in your account with them.</p>
       <form className="stack" style={{ gap: 14 }} onSubmit={submit}>
         <div className="field"><label htmlFor="s-name">Service</label>
           <div className="row" style={{ gap: 10 }}>

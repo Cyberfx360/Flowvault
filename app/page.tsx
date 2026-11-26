@@ -15,11 +15,11 @@ export default function Welcome() {
           </div>
         </div>
         <div className="stack" style={{ gap: 20 }}>
-          <h2>One card for every subscription.</h2>
+          <h2>A card for every subscription.</h2>
           <ul className="points">
             <li><Check /><span><b>Top up once</b>, and your money stays put for subscriptions only.</span></li>
-            <li><Check /><span><b>Get a virtual card</b> to pay Netflix, Spotify, DStv and the rest.</span></li>
-            <li><Check /><span><b>Switch any subscription off</b> in one tap. No more surprise charges.</span></li>
+            <li><Check /><span><b>Each subscription gets its own card</b>, for Netflix, Spotify, DStv and the rest.</span></li>
+            <li><Check /><span><b>Switch any subscription off</b> in one tap. Its card freezes, so no surprise charges.</span></li>
           </ul>
           <div className="stack">
             <Link className="btn primary block" href="/signup">Create account</Link>
