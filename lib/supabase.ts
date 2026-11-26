@@ -18,5 +18,7 @@ export type Card = {
 export type Txn = {
   id: string; kind: "topup" | "charge"; status: "success" | "declined"; amount_kobo: number;
   title: string; detail: string; subscription_id: string | null; created_at: string;
+  /** Fees only: the dollar amount shown to the user. */
+  usd_cents?: number | null;
 };
 export type Profile = { full_name: string; phone: string | null; verified?: boolean; tier?: number };

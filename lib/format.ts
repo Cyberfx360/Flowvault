@@ -37,3 +37,12 @@ export const dayLabel = (iso: string) => {
 };
 
 export const COLORS = ["#b1060f", "#1a7f45", "#0a4ea2", "#2b2f2b", "#c4302b", "#3a6fd8", "#6b2fa3", "#565a55"];
+
+/** Flowvault's own fees (card fee and its refund). They're always shown in dollars. */
+export const isFee = (t: { title: string }) => t.title.startsWith("Card fee");
+
+/** A History amount: fees in dollars (Kenneth's rule), everything else in Naira like the wallet. */
+export const txnAmount = (t: { title: string; amount_kobo: number; usd_cents?: number | null }, usdRate: number) =>
+  isFee(t)
+    ? "$" + ((t.usd_cents ?? Math.round(t.amount_kobo / usdRate)) / 100).toFixed(2) // older rows: convert back at today's rate
+    : naira(t.amount_kobo);

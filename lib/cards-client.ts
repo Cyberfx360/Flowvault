@@ -9,6 +9,6 @@ async function post<T>(url: string, method = "POST", body?: unknown): Promise<T>
 export const cardsApi = {
   power: (subId: string, on: boolean) => post(`/api/cards/${subId}/power`, "POST", { on }),
   reveal: (subId: string) => post<CardDetails & { test?: boolean }>(`/api/cards/${subId}/reveal`),
-  issue: (subId: string) => post(`/api/cards/${subId}/issue`),
+  issue: (subId: string, network?: "Visa" | "Mastercard") => post(`/api/cards/${subId}/issue`, "POST", network ? { network } : undefined),
   remove: (subId: string) => post(`/api/cards/${subId}`, "DELETE"),
 };

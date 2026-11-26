@@ -8,7 +8,7 @@ import { adminClient } from "@/lib/server-supabase";
  * Asks the card company for this subscription's card (real providers only; mock cards exist already).
  * The card itself arrives a moment later through the webhook.
  */
-export async function POST(_req: Request, { params }: { params: Promise<{ subId: string }> }) {
+export async function POST(req: Request, { params }: { params: Promise<{ subId: string }> }) {
   const { subId } = await params;
   const r = await load(subId);
   if ("error" in r) return r.error;
@@ -36,7 +36,10 @@ export async function POST(_req: Request, { params }: { params: Promise<{ subId:
     // Cards are paid from the Spend wallet; top it up from Treasury first if it's short.
     const moved = await ensureSpend(CARD_SPEND_CENTS);
     if (moved) console.log("Moved " + moved + " cents from Treasury to Spend for a new card");
-    const reference = await maplerad.requestCard(cust.customer_id);
+    // Visa or Mastercard, as picked when the subscription was added (kept for retries).
+    const picked = ((await req.json().catch(() => ({}))) as { network?: string }).network;
+    const { data: network } = await admin.rpc("fv_server_card_network", { p_subscription: subId, p_network: picked === "Mastercard" || picked === "Visa" ? picked : null });
+    const reference = await maplerad.requestCard(cust.customer_id, network === "Mastercard" ? "MASTERCARD" : "VISA");
     const { error } = await admin.rpc("fv_server_card_requested", { p_subscription: subId, p_reference: reference });
     if (error) throw error;
     return NextResponse.json({ ok: true, pending: true });

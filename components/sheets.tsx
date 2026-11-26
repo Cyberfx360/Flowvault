@@ -62,6 +62,7 @@ export function AddSubSheet({ open, onClose }: { open: boolean; onClose: () => v
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [typed, setTyped] = useState("");
+  const [network, setNetwork] = useState<"Visa" | "Mastercard">("Visa");
   const [preview, setPreview] = useState(""); // logo lookup waits until you stop typing
   useEffect(() => { const t = setTimeout(() => setPreview(typed.trim()), 450); return () => clearTimeout(t); }, [typed]);
   async function submit(e: React.FormEvent<HTMLFormElement>) {
@@ -78,7 +79,7 @@ export function AddSubSheet({ open, onClose }: { open: boolean; onClose: () => v
       p_name: name, p_plan: String(f.get("plan")), p_currency: currency,
       p_price_minor: Math.round(price * 100), p_billing_day: day, p_color: brandFor(name).color ?? COLORS[subs.length % COLORS.length],
     });
-    if (r) await cardsApi.issue(r).catch((e) => toast(e.message)); // real cards only (takes the fee); does nothing for test cards
+    if (r) await cardsApi.issue(r, network).catch((e) => toast(e.message)); // real cards only (takes the fee); does nothing for test cards
     setBusy(false);
     if (r) { setTyped(""); onClose(); toast(`${name} added with its own card`); router.push(`/subs/${r}?new=1`); }
   }
@@ -101,7 +102,16 @@ export function AddSubSheet({ open, onClose }: { open: boolean; onClose: () => v
           <select id="s-day" name="day" defaultValue={new Date().getDate() > 28 ? 28 : new Date().getDate()}>
             {Array.from({ length: 28 }, (_, i) => <option key={i + 1} value={i + 1}>{i + 1}</option>)}
           </select><span className="hint">Day of the month the service bills you.</span></div>
-        {fee > 0 && <span className="hint">Making the card costs {feeLabel}, taken from your wallet. You get it back if the card can&apos;t be made.</span>}
+        {fee > 0 && (
+          <div className="field"><span className="flabel">Card type</span>
+            <div className="seg" role="group" aria-label="Card type">
+              {(["Visa", "Mastercard"] as const).map((n) => (
+                <button type="button" key={n} aria-pressed={network === n} onClick={() => setNetwork(n)}>{n} · {feeLabel}</button>
+              ))}
+            </div>
+            <span className="hint">Both are US dollar cards and cost the same. The fee is taken from your wallet, and you get it back if the card can&apos;t be made.</span>
+          </div>
+        )}
         {err && <div className="error" role="alert">{err}</div>}
         <button className="btn primary block" disabled={busy}>{busy ? "Making your card…" : "Add and make its card"}</button>
       </form>

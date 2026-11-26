@@ -216,3 +216,5 @@ h3{font-size:13px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;
 .avatar.big{width:84px;height:84px;font-size:28px}
 .item>svg{width:18px;height:18px;flex:none;color:var(--ink-muted)}
 .item .meta .small{display:block}
+.vcard .netlogo{height:28px;width:auto;flex:none}
+.vcard .netlogo.visa{height:auto;font:italic 800 24px/1 system-ui,-apple-system,sans-serif;letter-spacing:.02em;color:#fff}

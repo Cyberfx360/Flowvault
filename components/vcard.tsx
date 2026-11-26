@@ -8,6 +8,27 @@ import type { CardDetails } from "@/lib/cards/types";
 
 const group = (pan: string) => pan.replace(/(\d{4})(?=\d)/g, "$1 ");
 
+/** Visa or Mastercard: from the card number when we have it (4 = Visa, 51-55 / 2221-2720 = Mastercard), else what the card company told us. */
+function networkOf(pan: string | undefined, stored: string | undefined): "Visa" | "Mastercard" {
+  const d = (pan ?? "").replace(/\D/g, "");
+  if (d.startsWith("4")) return "Visa";
+  const n2 = Number(d.slice(0, 2)), n4 = Number(d.slice(0, 4));
+  if ((n2 >= 51 && n2 <= 55) || (n4 >= 2221 && n4 <= 2720)) return "Mastercard";
+  return /master/i.test(stored ?? "") ? "Mastercard" : "Visa";
+}
+
+/** The network mark on the card face. */
+function NetworkLogo({ network }: { network: "Visa" | "Mastercard" }) {
+  return network === "Mastercard" ? (
+    <svg className="netlogo" viewBox="0 0 48 30" role="img" aria-label="Mastercard">
+      <circle cx="17" cy="15" r="12" fill="#eb001b" /><circle cx="31" cy="15" r="12" fill="#f79e1b" />
+      <path d="M24 5.4a12 12 0 0 1 0 19.2 12 12 0 0 1 0-19.2z" fill="#ff5f00" />
+    </svg>
+  ) : (
+    <span className="netlogo visa" role="img" aria-label="Visa">VISA</span>
+  );
+}
+
 /** One subscription's card, with Show details and Copy number. */
 export function SubCard({ sub, card, autoReveal }: { sub: Sub; card: Card | undefined; autoReveal?: boolean }) {
   const { toast, reload } = useStore();
@@ -45,7 +66,8 @@ export function SubCard({ sub, card, autoReveal }: { sub: Sub; card: Card | unde
   return (
     <div className="stack" style={{ gap: 10 }}>
       <div className={"vcard" + (frozen ? " frozen" : "")}>
-        <div className="row between"><span className="brand">{sub.name}</span><span className="chip" /></div>
+        <div className="row between"><span className="brand">{sub.name}</span><NetworkLogo network={networkOf(shown?.pan, card?.network)} /></div>
+        <span className="chip" />
         <div className="pan">{!ready ? (card?.status === "failed" ? "Card couldn't be made" : "Making your card…") : shown ? group(shown.pan) : `•••• •••• •••• ${card!.last4}`}</div>
         <div className="row between">
           <div><div className="lbl">Card holder</div><div className="val">{card?.holder_name ?? ""}</div></div>

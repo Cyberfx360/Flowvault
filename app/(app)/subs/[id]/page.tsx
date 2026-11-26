@@ -8,7 +8,7 @@ import { Badge, Switch } from "@/components/ui";
 import { SubCard } from "@/components/vcard";
 import { cardsApi } from "@/lib/cards-client";
 import { Back } from "@/components/icons";
-import { money, naira, nextCharge, ordinal, shortDate, dayLabel } from "@/lib/format";
+import { money, naira, nextCharge, ordinal, shortDate, dayLabel, isFee, txnAmount } from "@/lib/format";
 
 export default function Detail() {
   const { id } = useParams<{ id: string }>();
@@ -24,7 +24,8 @@ export default function Detail() {
   const card = cardFor(s.id);
   const hist = txns.filter((t) => t.subscription_id === s.id);
   const year = new Date().getFullYear();
-  const paidYear = hist.filter((t) => t.status === "success" && new Date(t.created_at).getFullYear() === year).reduce((a, t) => a + t.amount_kobo, 0);
+  // Subscription payments only; card fees and refunds are not what the service cost.
+  const paidYear = hist.filter((t) => t.kind === "charge" && !isFee(t) && t.status === "success" && new Date(t.created_at).getFullYear() === year).reduce((a, t) => a + t.amount_kobo, 0);
 
   const set = (k: "p_price_guard" | "p_remind", v: boolean) => act("update_subscription", { p_id: s.id, [k]: v });
   const toggleOn = async () => {
@@ -70,7 +71,7 @@ export default function Detail() {
         <div className="panel list">
           {hist.length ? hist.map((t) => (
             <div className="row between" key={t.id}><span>{dayLabel(t.created_at)}</span>
-              {t.status === "declined" ? <span className="pill bad">Declined</span> : <span className="num">{naira(t.amount_kobo)}</span>}</div>
+              {t.status === "declined" ? <span className="pill bad">Declined</span> : <span className="num">{txnAmount(t, usdRate)}</span>}</div>
           )) : <div className="empty">No payments yet.</div>}
         </div>
       </div>

@@ -2,10 +2,10 @@
 import { useState } from "react";
 import { useStore } from "@/components/store";
 import { Badge } from "@/components/ui";
-import { dayLabel, naira } from "@/lib/format";
+import { dayLabel, txnAmount } from "@/lib/format";
 
 export default function History() {
-  const { ready, txns, subs } = useStore();
+  const { ready, txns, subs, usdRate } = useStore();
   const [f, setF] = useState<"all" | "in" | "out">("all");
   if (!ready) return <div className="loading">Loading…</div>;
 
@@ -38,9 +38,9 @@ export default function History() {
                     {t.kind === "topup"
                       ? <span className="badge" style={{ background: "var(--success-soft)", color: "var(--success)" }}>↓</span>
                       : <Badge name={t.title} color={sub?.color ?? "#565a55"} />}
-                    <span className="meta"><span className="name">{t.title}</span><span className="small">{t.detail}</span></span>
+                    <span className="meta"><span className="name">{t.title}</span><span className="small">{t.detail.replace(/^\$[\d.]+ · /, "")}</span></span>
                     <span className="amt num" style={{ color: t.kind === "topup" ? "var(--success)" : declined ? "var(--ink-subtle)" : "var(--ink)" }}>
-                      {declined ? "₦0" : (t.kind === "topup" ? "+" : "−") + naira(t.amount_kobo)}
+                      {declined ? "₦0" : (t.kind === "topup" ? "+" : "−") + txnAmount(t, usdRate)}
                     </span>
                   </div>
                 );
