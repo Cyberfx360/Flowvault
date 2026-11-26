@@ -58,6 +58,7 @@ export async function enrollCustomer(k: KycDetails): Promise<string> {
 
 export type IdType = "NIN" | "PASSPORT" | "DRIVERS_LICENSE" | "VOTERS_CARD";
 /** Tier 2: an ID document plus a selfie. Maplerad only makes cards for tier 2 customers. */
+/** Photos go as base64 data URIs ("data:image/jpeg;base64,..."); Maplerad rejects links. */
 export async function upgradeTier2(customerId: string, id: { type: IdType; number: string; imageUrl: string }, selfieUrl: string) {
   await call("PATCH", "/customers/upgrade/tier2", {
     customer_id: customerId,

@@ -6,14 +6,14 @@ import { useStore } from "@/components/store";
 import { Back, Info } from "@/components/icons";
 import { cardsApi } from "@/lib/cards-client";
 
-/** Shrinks a phone photo to a JPEG of at most 1600px so it uploads quickly. */
+/** Shrinks a phone photo to a JPEG of at most 1280px (a few hundred KB) so it uploads quickly. */
 async function shrink(file: File): Promise<string> {
   const bmp = await createImageBitmap(file);
-  const k = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+  const k = Math.min(1, 1280 / Math.max(bmp.width, bmp.height));
   const c = document.createElement("canvas");
   c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
   c.getContext("2d")!.drawImage(bmp, 0, 0, c.width, c.height);
-  return c.toDataURL("image/jpeg", 0.85);
+  return c.toDataURL("image/jpeg", 0.8);
 }
 
 /** ID check for real cards. The card company needs these details by law; Flowvault doesn't keep them. */
@@ -71,7 +71,7 @@ function VerifyScreen() {
       <div className="topbar">{welcome ? <span /> : <Link className="icon-btn" href="/card" aria-label="Back"><Back /></Link>}
         {welcome ? <Link className="btn link" href="/home">Skip for now</Link> : <span style={{ width: 44 }} />}</div>
       <div className="stack" style={{ gap: 6 }}>{welcome && <p className="sub small">Welcome to Flowvault</p>}<h2>Verify your ID</h2>
-        <p className="sub">Two quick steps: your BVN, then a photo of your ID and a selfie. Real cards come from our card partner, Maplerad. By law they need to know who you are before they make a card. Flowvault sends your details to them securely, and keeps your ID photos in private storage.</p></div>
+        <p className="sub">Two quick steps: your BVN, then a photo of your ID and a selfie. Real cards come from our card partner, Maplerad. By law they need to know who you are before they make a card. Flowvault sends your details and photos straight to them and doesn&apos;t keep the photos.</p></div>
       {!state ? <div className="loading">Loading…</div>
         : !state.available ? <div className="callout"><Info /><span>Real cards aren&apos;t switched on yet. You can keep using test cards for now.</span></div>
         : state.verified || profile?.verified ? <div className="callout"><Info /><span>You&apos;re verified. Every new subscription you add gets a real card.</span></div>
