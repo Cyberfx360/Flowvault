@@ -25,14 +25,21 @@ export async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
   const inApp = APP.some((p) => path === p || path.startsWith(p + "/"));
 
-  if (!user && (inApp || LOGIN_ONLY.some((p) => path.startsWith(p)))) return NextResponse.redirect(new URL("/login", req.url));
+  if (!user && (inApp || LOGIN_ONLY.some((p) => path.startsWith(p)))) {
+    // Remember where they were going, so login brings them back (e.g. /admin).
+    const to = new URL("/login", req.url);
+    if (path !== "/home") to.searchParams.set("next", path);
+    return NextResponse.redirect(to);
+  }
   // Nobody sees the app until their BVN and NIN are both checked. Everything else sends them to /verify.
   if (user && inApp && !path.startsWith("/verify")) {
     const { data: ok } = await supabase.rpc("fv_is_verified");
     if (ok !== true) return NextResponse.redirect(new URL("/verify", req.url));
   }
-  if (user && (path === "/" || path === "/login" || path === "/signup"))
-    return NextResponse.redirect(new URL("/home", req.url));
+  if (user && (path === "/" || path === "/login" || path === "/signup")) {
+    const next = req.nextUrl.searchParams.get("next");
+    return NextResponse.redirect(new URL(next && /^\/(?![\/\\])/.test(next) ? next : "/home", req.url));
+  }
   return res;
 }
 

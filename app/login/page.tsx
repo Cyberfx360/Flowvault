@@ -20,7 +20,9 @@ export default function Login() {
     });
     setBusy(false);
     if (error) return setError(error.message === "Invalid login credentials" ? "That email and password don't match." : error.message);
-    router.replace("/home"); router.refresh();
+    // Go back to the page that sent them here (only our own pages), else Home.
+    const next = new URLSearchParams(window.location.search).get("next");
+    router.replace(next && /^\/(?![\/\\])/.test(next) ? next : "/home"); router.refresh();
   }
 
   return (
