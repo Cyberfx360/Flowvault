@@ -50,7 +50,8 @@ export default function Detail() {
         <span className="sub">{s.plan} · since {new Date(s.created_at).toLocaleDateString("en-NG", { month: "short", year: "numeric" })}</span>
         <span className={"pill " + (s.is_on ? "ok" : "off")}>{s.is_on ? "On" : "Off"}</span>
       </div>
-      {isNew && <div className="callout"><span>Your new <b>{s.name}</b> card is ready. Copy the number and add it as the payment card in your {s.name} account.</span></div>}
+      {isNew && card?.status === "pending" && <div className="callout"><span>Your <b>{s.name}</b> card is being made. This usually takes a few seconds.</span></div>}
+      {isNew && card?.status === "active" && <div className="callout"><span>Your new <b>{s.name}</b> card is ready. Copy the number and add it as the payment card in your {s.name} account.</span></div>}
       <SubCard sub={s} card={card} autoReveal={isNew} />
       <p className="sub small" style={{ textAlign: "center" }}>This card is only for {s.name}. Enter its number in your {s.name} account.</p>
       <div className="stat">

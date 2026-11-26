@@ -61,7 +61,11 @@ export async function walletsSummary(): Promise<string> {
   const data = await call<unknown>("GET", "/wallets");
   const list = (Array.isArray(data) ? data : []) as Record<string, unknown>[];
   if (!list.length) return "no wallets found for this key";
-  return list.map((w) => `${w.currency ?? "?"} available ${w.available_balance ?? w.balance ?? "?"}`).join(", ");
+  // Show every field that names the wallet's kind (e.g. SPEND / TREASURY), so we can see which one has money.
+  return list.map((w) => {
+    const kind = Object.entries(w).filter(([k, v]) => /type|name|kind/i.test(k) && typeof v === "string").map(([, v]) => v).join("/");
+    return `${w.currency ?? "?"}${kind ? " " + kind : ""} available ${w.available_balance ?? w.balance ?? "?"}`;
+  }).join(", ");
 }
 
 export type IdType = "NIN" | "PASSPORT" | "DRIVERS_LICENSE" | "VOTERS_CARD";
@@ -122,7 +126,7 @@ export const maplerad: CardProvider & {
     const pan = str(c.card_number) ?? str(c.pan) ?? str(c.number);
     const cvv = str(c.cvv) ?? str(c.cvv2);
     if (!pan || !cvv) throw new Error("Maplerad didn't return the card details");
-    // VERIFY: Maplerad returns the billing address on the card; "address" / "billing_address" are the likely names.
+    // GET /issuing/{id} returns address {street, city, state, postal_code, country} (maplerad.dev/reference/get-a-card).
     const a = (c.address ?? c.billing_address) as Record<string, unknown> | undefined;
     const address = a && typeof a === "object" && str(a.street ?? a.line1 ?? a.address)
       ? {
