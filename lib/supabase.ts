@@ -19,4 +19,4 @@ export type Txn = {
   id: string; kind: "topup" | "charge"; status: "success" | "declined"; amount_kobo: number;
   title: string; detail: string; subscription_id: string | null; created_at: string;
 };
-export type Profile = { full_name: string; phone: string | null; verified?: boolean };
+export type Profile = { full_name: string; phone: string | null; verified?: boolean; tier?: number };

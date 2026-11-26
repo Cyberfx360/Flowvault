@@ -33,8 +33,8 @@ export default function CardsPage() {
         }) : <div className="empty">No cards yet. Tap <b>New card for a company</b> above.</div>}
       </div>
       <Link className="panel row" style={{ padding: "14px 16px" }} href="/verify">
-        <div style={{ flex: 1 }}><div style={{ fontWeight: 500 }}>{profile?.verified ? "ID verified" : "Get real cards"}</div>
-          <div className="sub small">{profile?.verified ? "New subscriptions get real Visa cards" : "Verify your ID with your BVN"}</div></div>
+        <div style={{ flex: 1 }}><div style={{ fontWeight: 500 }}>{profile?.verified ? "ID verified" : (profile?.tier ?? 0) >= 1 ? "Finish your ID check" : "Get real cards"}</div>
+          <div className="sub small">{profile?.verified ? "New subscriptions get real Visa cards" : (profile?.tier ?? 0) >= 1 ? "Step 2: a photo of your ID and a selfie" : "Verify your ID with your BVN"}</div></div>
         <Chevron />
       </Link>
       <div className="callout"><Info /><span>{provider === "mock" && !profile?.verified

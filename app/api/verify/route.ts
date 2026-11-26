@@ -8,8 +8,9 @@ export async function GET() {
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return NextResponse.json({ error: "Please sign in again" }, { status: 401 });
   if (!mapleradReady()) return NextResponse.json({ available: false, verified: false });
-  const { data } = await adminClient().rpc("fv_server_customer", { p_user: user.id }).maybeSingle<{ customer_id: string | null }>();
-  return NextResponse.json({ available: true, verified: !!data?.customer_id });
+  const { data } = await adminClient().rpc("fv_server_customer2", { p_user: user.id }).maybeSingle<{ customer_id: string | null; tier: number | null }>();
+  const tier = data?.customer_id ? data.tier ?? 1 : 0;
+  return NextResponse.json({ available: true, tier, verified: tier >= 2 });
 }
 
 /** ID check: registers the user with Maplerad (BVN, date of birth, phone, address). Nothing is stored except Maplerad's customer id. */
@@ -33,8 +34,10 @@ export async function POST(req: Request) {
       phone: { phone_country_code: "+234", phone_number: phone },
       address: { street: f.street.trim(), city: f.city.trim(), state: f.state.trim(), country: "NG", postal_code: f.postalCode.trim() },
     });
-    const { error } = await adminClient().rpc("fv_server_set_customer", { p_user: user.id, p_customer_id: id });
+    const admin = adminClient();
+    const { error } = await admin.rpc("fv_server_set_customer", { p_user: user.id, p_customer_id: id });
     if (error) throw error;
+    await admin.rpc("fv_server_set_tier", { p_user: user.id, p_tier: 1 });
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error(e);

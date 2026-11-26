@@ -22,10 +22,10 @@ export async function POST(_req: Request, { params }: { params: Promise<{ subId:
     return NextResponse.json({ ok: true, pending: true });
   }
 
-  const { data: cust } = await admin.rpc("fv_server_customer", { p_user: r.user.id }).maybeSingle<{ customer_id: string | null }>();
-  if (!cust?.customer_id) {
+  const { data: cust } = await admin.rpc("fv_server_customer2", { p_user: r.user.id }).maybeSingle<{ customer_id: string | null; tier: number | null }>();
+  if (!cust?.customer_id || (cust.tier ?? 1) < 2) {
     // Maplerad needs ID checks (BVN, date of birth, address) before the first card. That screen isn't built yet.
-    return NextResponse.json({ error: "Verify your identity first to get real cards" }, { status: 409 });
+    return NextResponse.json({ error: "Finish your ID check first (Cards > Get real cards)" }, { status: 409 });
   }
   try {
     const reference = await maplerad.requestCard(cust.customer_id);
