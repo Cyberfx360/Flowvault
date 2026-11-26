@@ -4,13 +4,14 @@ import { useStore } from "./store";
 import { Copy, Eye } from "./icons";
 import { cardsApi } from "@/lib/cards-client";
 import type { Card, Sub } from "@/lib/supabase";
+import type { CardDetails } from "@/lib/cards/types";
 
 const group = (pan: string) => pan.replace(/(\d{4})(?=\d)/g, "$1 ");
 
 /** One subscription's card, with Show details and Copy number. */
 export function SubCard({ sub, card, autoReveal }: { sub: Sub; card: Card | undefined; autoReveal?: boolean }) {
   const { toast, reload } = useStore();
-  const [shown, setShown] = useState<{ pan: string; cvv: string } | null>(null);
+  const [shown, setShown] = useState<(CardDetails & { test?: boolean }) | null>(null);
   const ready = card?.status === "active";
 
   async function details() {
@@ -62,6 +63,30 @@ export function SubCard({ sub, card, autoReveal }: { sub: Sub; card: Card | unde
           <button className="btn ghost" style={{ flex: 1 }} onClick={copy}><Copy />Copy number</button>
         </div>
       )}
+      {ready && shown && <Address a={shown.address} test={shown.test} />}
+    </div>
+  );
+}
+
+/** Billing address for the card, with a copy button on each line. Sites ask for it when you add the card. */
+function Address({ a, test }: { a: CardDetails["address"]; test?: boolean }) {
+  const { toast } = useStore();
+  if (!a) return <div className="callout"><span>The card company didn&apos;t send a billing address for this card. If a site asks for one, use your own address.</span></div>;
+  const rows: [string, string][] = [["Street", a.street], ["City", a.city], ["State", a.state], ["ZIP / postal code", a.postal_code], ["Country", a.country]];
+  async function copy(label: string, v: string) {
+    try { await navigator.clipboard.writeText(v); toast(`${label} copied`); } catch { toast("Couldn't copy"); }
+  }
+  return (
+    <div className="stack" style={{ gap: 6 }}>
+      <h3 className="sub small" style={{ margin: "6px 4px 0" }}>Billing address{test ? " (test card, not real)" : ""}</h3>
+      <div className="panel list">
+        {rows.filter(([, v]) => v).map(([k, v]) => (
+          <button key={k} className="item" onClick={() => copy(k, v)} aria-label={`Copy ${k}`}>
+            <span className="meta"><span className="small">{k}</span><span className="name">{v}</span></span><Copy />
+          </button>
+        ))}
+      </div>
+      <button className="btn link" onClick={() => copy("Address", rows.map(([, v]) => v).filter(Boolean).join(", "))}>Copy whole address</button>
     </div>
   );
 }

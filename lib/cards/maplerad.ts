@@ -117,11 +117,23 @@ export const maplerad: CardProvider & {
 
   async reveal(cardId) {
     // VERIFY: the docs don't list the fields GET /issuing/{id} returns. These names are the likely ones.
-    const c = await call<Record<string, string | undefined>>("GET", `/issuing/${cardId}`);
-    const pan = c.card_number ?? c.pan ?? c.number;
-    const cvv = c.cvv ?? c.cvv2;
+    const c = await call<Record<string, unknown>>("GET", `/issuing/${cardId}`);
+    const str = (v: unknown) => (typeof v === "string" || typeof v === "number" ? String(v) : undefined);
+    const pan = str(c.card_number) ?? str(c.pan) ?? str(c.number);
+    const cvv = str(c.cvv) ?? str(c.cvv2);
     if (!pan || !cvv) throw new Error("Maplerad didn't return the card details");
-    return { pan, cvv };
+    // VERIFY: Maplerad returns the billing address on the card; "address" / "billing_address" are the likely names.
+    const a = (c.address ?? c.billing_address) as Record<string, unknown> | undefined;
+    const address = a && typeof a === "object" && str(a.street ?? a.line1 ?? a.address)
+      ? {
+          street: str(a.street ?? a.line1 ?? a.address) ?? "",
+          city: str(a.city) ?? "",
+          state: str(a.state) ?? "",
+          postal_code: str(a.postal_code ?? a.zip ?? a.zip_code ?? a.postalCode) ?? "",
+          country: str(a.country) ?? "",
+        }
+      : null;
+    return { pan, cvv, address };
   },
 };
 
