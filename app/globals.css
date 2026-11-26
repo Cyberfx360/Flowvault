@@ -5,7 +5,7 @@
   --tint:#2464c1;--tint-soft:#e7efff;--on-tint:#fff;--spark:#f5a524;
   --success:#16703a;--success-soft:#e2f3e7;--warning:#8f5b00;--warning-soft:#fdf1d6;--danger:#c0291b;--danger-soft:#fdeae8;
   --scrim:#0f11108c;--stage:#e9e9e4;
-  --glass:#ffffff8c;--glass-edge:#ffffffb3;--glass-shine:#ffffffe6;--glass-pill:#ffffffd9;--card-a:#141614;--card-b:#2b2f2b;--card-ink:#f7f7f5;
+  --glass:#ffffff8c;--glass-edge:#ffffffb3;--glass-shine:#ffffffe6;--glass-pill:#ffffffd9;--glass-lens:#ffffff73;--card-a:#141614;--card-b:#2b2f2b;--card-ink:#f7f7f5;
   --shadow-sm:0 1px 2px #1416140f,0 1px 3px #14161414;--shadow-lg:0 4px 8px #14161414,0 24px 48px -12px #14161433;
   --sans:var(--font-geist),ui-sans-serif,system-ui,"Segoe UI",sans-serif;
   --display:var(--font-serif),ui-serif,Georgia,serif;
@@ -18,7 +18,7 @@
   --tint:#6ea5ff;--tint-soft:#14274a;--on-tint:#0f1110;--spark:#f5b13d;
   --success:#52c27d;--success-soft:#11301d;--warning:#f1b443;--warning-soft:#33280e;--danger:#ff8070;--danger-soft:#3b1714;
   --scrim:#000000a6;--stage:#0a0b0a;
-  --glass:#2125228c;--glass-edge:#ffffff1f;--glass-shine:#ffffff26;--glass-pill:#ffffff1f;--card-a:#2a2e2b;--card-b:#3a3f3b;--card-ink:#ecedea;
+  --glass:#2125228c;--glass-edge:#ffffff1f;--glass-shine:#ffffff26;--glass-pill:#ffffff1f;--glass-lens:#ffffff26;--card-a:#2a2e2b;--card-b:#3a3f3b;--card-ink:#ecedea;
   --shadow-sm:0 1px 2px #00000080;--shadow-lg:0 24px 48px -12px #000000cc;color-scheme:dark}}
 
 *{box-sizing:border-box}
@@ -51,6 +51,9 @@ a{color:inherit;text-decoration:none}
 .glass-thumb{position:absolute;z-index:0;left:0;top:6px;bottom:6px;border-radius:24px;pointer-events:none;will-change:transform;
   transform-origin:center;background:var(--glass-pill);
   box-shadow:inset 0 1px 0 var(--glass-shine),inset 0 -1px 0 #00000008,0 2px 8px #1416141f,0 0 0 .5px #ffffff59}
+.glass-thumb{transition:box-shadow .25s,background .25s}
+.glass-thumb.lifted{background:var(--glass-lens);-webkit-backdrop-filter:blur(6px) saturate(200%);backdrop-filter:blur(6px) saturate(200%);
+  box-shadow:inset 0 1.5px 0 var(--glass-shine),inset 0 -2px 6px #ffffff40,0 12px 28px -6px #14161447,0 0 0 .5px #ffffff80}
 .tabs svg{width:22px;height:22px}
 .shell:has(.tabs) .screen{padding-bottom:110px}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.tabs{background:var(--surface)}}
@@ -83,10 +86,9 @@ h3{font-size:13px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;
 .item .small{color:var(--ink-muted)}
 .amt{font-weight:600;text-align:right;white-space:nowrap}
 .badge{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-weight:700;font-size:15px;flex:none;color:#fff}
-/* Company logos fill their rounded box edge to edge, clipped to its corners. */
-.badge.logo{position:relative;background:#fff;overflow:hidden;padding:0;isolation:isolate}
-.badge.logo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit}
-.badge.logo::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 1px #14161414;pointer-events:none}
+/* Company logos stand on their own: no box, background or outline. */
+.badge.logo{background:none;border-radius:0;padding:0;overflow:visible}
+.badge.logo img{width:100%;height:100%;object-fit:contain;display:block}
 .pill{white-space:nowrap;font-size:12px;font-weight:500;border-radius:999px;padding:2px 8px;display:inline-block}
 .pill.ok{background:var(--success-soft);color:var(--success)}
 .pill.off{background:var(--sunken);color:var(--ink-muted)}

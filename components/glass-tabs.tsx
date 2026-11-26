@@ -18,17 +18,21 @@ export function GlassTabs({ tabs }: { tabs: Tab[] }) {
   const active = Math.max(0, tabs.findIndex((t) => path === t.href || path.startsWith(t.href + "/")));
 
   // Motion state lives in a ref so animating never re-renders React.
-  const m = useRef({ x: 0, v: 0, target: 0, w: 0, pad: 6, dragging: false, lift: 0, startX: 0, moved: false, raf: 0, last: 0, moveT: 0, ready: false });
+  const m = useRef({ x: 0, v: 0, target: 0, w: 0, pad: 6, dragging: false, pressed: false, lift: 0, startX: 0, moved: false, raf: 0, last: 0, moveT: 0, ready: false });
   const reduce = useRef(false);
 
   const draw = () => {
     const s = m.current, el = thumb.current;
     if (!el) return;
     const speed = reduce.current ? 0 : Math.min(1, Math.abs(s.v) / 3000);
-    const sx = 1 + speed * 0.28 + s.lift * 0.06; // stretch along the direction of travel
-    const sy = 1 - speed * 0.14 + s.lift * 0.06; // and squish a little the other way
+    const lift = reduce.current ? 0 : s.lift;
+    // Pressed: the glass swells out of the bar like a lens. Moving: it stretches along
+    // the direction of travel and squishes a little the other way.
+    const sx = 1 + lift * 0.32 + speed * 0.22;
+    const sy = 1 + lift * 0.42 - speed * 0.12;
     el.style.width = s.w + "px";
-    el.style.transform = `translateX(${s.x}px) scale(${sx}, ${sy})`;
+    el.style.transform = `translateX(${s.x}px) translateY(${-lift * 3}px) scale(${sx}, ${sy})`;
+    el.classList.toggle("lifted", lift > 0.25);
   };
 
   const step = (t: number) => {
@@ -41,9 +45,9 @@ export function GlassTabs({ tabs }: { tabs: Tab[] }) {
       s.v += (k * (s.target - s.x) - c * s.v) * dt;
       s.x += s.v * dt;
     }
-    s.lift += ((s.dragging ? 1 : 0) - s.lift) * Math.min(1, dt * 14);
+    s.lift += ((s.dragging || s.pressed ? 1 : 0) - s.lift) * Math.min(1, dt * 16);
     draw();
-    const resting = !s.dragging && Math.abs(s.target - s.x) < 0.3 && Math.abs(s.v) < 5 && s.lift < 0.01;
+    const resting = !s.dragging && !s.pressed && Math.abs(s.target - s.x) < 0.3 && Math.abs(s.v) < 5 && s.lift < 0.01;
     if (resting) { s.x = s.target; s.v = 0; s.lift = 0; draw(); s.raf = 0; s.last = 0; return; }
     s.raf = requestAnimationFrame(step);
   };
@@ -88,6 +92,10 @@ export function GlassTabs({ tabs }: { tabs: Tab[] }) {
     if (e.button !== 0) return;
     const s = m.current;
     s.startX = localX(e); s.moved = false;
+    // Grow the glass straight away, under the tab you pressed.
+    s.pressed = true;
+    s.target = slotX(Math.max(0, Math.min(tabs.length - 1, Math.floor((s.startX - s.pad) / s.w))));
+    kick();
   };
   const onMove = (e: React.PointerEvent) => {
     const s = m.current;
@@ -110,7 +118,9 @@ export function GlassTabs({ tabs }: { tabs: Tab[] }) {
   const onUp = (e: React.PointerEvent) => {
     const s = m.current;
     s.startX = 0;
-    if (!s.dragging) return;
+    s.pressed = false;
+    if (e.type === "pointercancel" && !s.dragging) { s.target = slotX(active); kick(); return; }
+    if (!s.dragging) { kick(); return; }
     s.dragging = false;
     const i = Math.max(0, Math.min(tabs.length - 1, Math.round((s.x - s.pad) / s.w)));
     s.moveT = 0;
