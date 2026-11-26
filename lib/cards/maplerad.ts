@@ -86,6 +86,24 @@ export async function ensureSpend(neededCents: number): Promise<number> {
   return move;
 }
 
+/** Wallets for the admin page: currency, kind (TREASURY/SPEND/...) and available balance in the smallest unit. */
+export async function walletList(): Promise<{ currency: string; kind: string; available: number }[]> {
+  const data = await call<unknown>("GET", "/wallets");
+  const list = (Array.isArray(data) ? data : []) as Record<string, unknown>[];
+  return list.map((w) => ({
+    currency: String(w.currency ?? "?"),
+    kind: Object.entries(w).filter(([k, v]) => /type|name|kind/i.test(k) && typeof v === "string").map(([, v]) => String(v).toUpperCase()).find((v) => /TREASURY|SPEND|MAIN|COLLECTION/.test(v)) ?? "",
+    available: Number(w.available_balance ?? w.balance ?? 0) || 0,
+  }));
+}
+
+/** Admin button: move dollars from Treasury to Spend (Maplerad takes 3% from Treasury). Capped at 500 dollars a go. */
+export async function moveToSpend(cents: number) {
+  if (!Number.isInteger(cents) || cents < 100) throw new Error("Move at least 1 dollar");
+  if (cents > 50000) throw new Error("Move at most 500 dollars at a time");
+  await call("POST", "/wallets/fund", { currency: "USD", source_wallet_type: "TREASURY", destination_wallet_type: "SPEND", amount: cents });
+}
+
 /** What one new card takes from Spend: 2 dollars issuance + 1 dollar funding fee + the 2 dollar first load. */
 export const CARD_SPEND_CENTS = 500;
 

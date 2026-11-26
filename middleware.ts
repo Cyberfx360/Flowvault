@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 const APP = ["/home", "/card", "/subs", "/history", "/verify", "/profile", "/topup"];
+const LOGIN_ONLY = ["/admin"]; // needs a login; the page itself checks ADMIN_EMAILS
 
 // Keeps the login fresh and sends people to the right place.
 export async function middleware(req: NextRequest) {
@@ -24,7 +25,7 @@ export async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
   const inApp = APP.some((p) => path === p || path.startsWith(p + "/"));
 
-  if (!user && inApp) return NextResponse.redirect(new URL("/login", req.url));
+  if (!user && (inApp || LOGIN_ONLY.some((p) => path.startsWith(p)))) return NextResponse.redirect(new URL("/login", req.url));
   // Nobody sees the app until their BVN and NIN are both checked. Everything else sends them to /verify.
   if (user && inApp && !path.startsWith("/verify")) {
     const { data: ok } = await supabase.rpc("fv_is_verified");

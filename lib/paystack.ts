@@ -57,3 +57,9 @@ export async function settle(admin: { rpc: (fn: string, args: Record<string, unk
   if (r.failed) { await admin.rpc("fv_server_topup_failed", { p_reference: reference }); return "failed"; }
   return "pending";
 }
+
+/** Naira sitting in Paystack (kobo), for the admin page. */
+export async function paystackBalanceKobo() {
+  const d = await call<{ currency: string; balance: number }[]>("GET", "/balance");
+  return d.find((b) => b.currency === "NGN")?.balance ?? 0;
+}

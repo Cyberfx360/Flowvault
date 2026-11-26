@@ -157,3 +157,9 @@ Settings > API Keys & Webhooks, set the **Webhook URL** to `https://<your app>/a
 Without the key the app keeps its pretend top-ups. The first **live** (`sk_live_`) payment switches
 pretend top-ups off for good, so nobody can add free money once real money flows.
 
+
+## Admin page
+
+Open `/admin` on the live site while logged in. Only the emails in `ADMIN_EMAILS` (Render > Environment, comma separated) can see it; everyone else gets "not found".
+
+It shows Maplerad balances (USD Spend, USD Treasury, Naira), the Paystack balance and daily move status, users and ID checks, top-ups, card fees earned, and cards (with recent failures). Buttons: move dollars from Treasury to Spend (Maplerad takes about 3%, max $500 a go) and send the Paystack money to Maplerad now (needs AUTO_SWEEP=on, once a day). Maplerad has no API to turn Naira into dollars, so that is done in the Maplerad dashboard.
