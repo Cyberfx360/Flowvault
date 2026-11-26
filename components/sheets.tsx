@@ -1,6 +1,7 @@
 "use client";
-import { useState } from "react";
-import { Sheet } from "./ui";
+import { useEffect, useState } from "react";
+import { Badge, Sheet } from "./ui";
+import { brandFor } from "@/lib/brands";
 import { Warn } from "./icons";
 import { useStore } from "./store";
 import { COLORS, money, naira, nextCharge, shortDate } from "@/lib/format";
@@ -54,6 +55,9 @@ export function AddSubSheet({ open, onClose }: { open: boolean; onClose: () => v
   const { act, toast, subs } = useStore();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [typed, setTyped] = useState("");
+  const [preview, setPreview] = useState(""); // logo lookup waits until you stop typing
+  useEffect(() => { const t = setTimeout(() => setPreview(typed.trim()), 450); return () => clearTimeout(t); }, [typed]);
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
@@ -65,17 +69,21 @@ export function AddSubSheet({ open, onClose }: { open: boolean; onClose: () => v
     setBusy(true); setErr("");
     const r = await act("add_subscription", {
       p_name: name, p_plan: String(f.get("plan")), p_currency: currency,
-      p_price_minor: Math.round(price * 100), p_billing_day: day, p_color: COLORS[subs.length % COLORS.length],
+      p_price_minor: Math.round(price * 100), p_billing_day: day, p_color: brandFor(name).color ?? COLORS[subs.length % COLORS.length],
     });
     setBusy(false);
-    if (r !== undefined) { onClose(); toast(`${name} added`); }
+    if (r !== undefined) { setTyped(""); onClose(); toast(`${name} added`); }
   }
   return (
     <Sheet open={open} onClose={onClose} label="Add a subscription">
       <h2 style={{ fontSize: 22 }}>Add a subscription</h2>
       <p className="sub">Add the services you pay with your Flowvault card. Only services on this list can charge it.</p>
       <form className="stack" style={{ gap: 14 }} onSubmit={submit}>
-        <div className="field"><label htmlFor="s-name">Service</label><input id="s-name" name="name" placeholder="e.g. Netflix" required maxLength={60} /></div>
+        <div className="field"><label htmlFor="s-name">Service</label>
+          <div className="row" style={{ gap: 10 }}>
+            <Badge key={preview} name={preview || "?"} color={brandFor(preview).color ?? "#8a8a82"} />
+            <input id="s-name" name="name" placeholder="e.g. Netflix" required maxLength={60} value={typed} onChange={(e) => setTyped(e.target.value)} style={{ flex: 1 }} />
+          </div><span className="hint">We find the company&apos;s logo automatically.</span></div>
         <div className="field"><label htmlFor="s-plan">Plan (optional)</label><input id="s-plan" name="plan" placeholder="e.g. Standard" /></div>
         <div className="two">
           <div className="field"><label htmlFor="s-cur">Billed in</label><select id="s-cur" name="currency" defaultValue="NGN"><option value="NGN">Naira (₦)</option><option value="USD">Dollars ($)</option></select></div>
