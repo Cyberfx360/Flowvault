@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { Check } from "@/components/icons";
+import { Wordmark } from "@/components/logo";
 
 export default function Welcome() {
   return (
     <div className="shell">
       <section className="screen welcome">
+        <Wordmark size={32} />
         <div className="art">
           <div className="vcard">
             <div className="row between"><span className="brand">Flowvault</span><span className="chip" /></div>

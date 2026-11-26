@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui";
 import { Chevron, Logout, Plus } from "@/components/icons";
 import { money, naira, nextCharge, shortDate } from "@/lib/format";
 import { supabase } from "@/lib/supabase";
+import { Logo } from "@/components/logo";
 
 export default function Home() {
   const { ready, profile, balance, subs, card, usdRate } = useStore();
@@ -30,7 +31,7 @@ export default function Home() {
   return (
     <section className="screen">
       <div className="topbar">
-        <div><p className="sub small">{hello}</p><h2 style={{ fontSize: 22 }}>{profile?.full_name.split(" ")[0] || "there"}</h2></div>
+        <div className="row"><Logo size={40} /><div><p className="sub small">{hello}</p><h2 style={{ fontSize: 22 }}>{profile?.full_name.split(" ")[0] || "there"}</h2></div></div>
         <button className="icon-btn" aria-label="Sign out" onClick={signOut}><Logout /></button>
       </div>
 

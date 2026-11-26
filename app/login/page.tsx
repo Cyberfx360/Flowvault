@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Back } from "@/components/icons";
+import { Logo } from "@/components/logo";
 
 export default function Login() {
   const router = useRouter();
@@ -25,7 +26,7 @@ export default function Login() {
   return (
     <div className="shell">
       <section className="screen">
-        <div className="topbar"><Link className="icon-btn" href="/" aria-label="Back"><Back /></Link><span style={{ width: 44 }} /></div>
+        <div className="topbar"><Link className="icon-btn" href="/" aria-label="Back"><Back /></Link><Logo size={36} /><span style={{ width: 44 }} /></div>
         <div className="stack"><h2>Welcome back</h2><p className="sub">Sign in to manage your subscriptions.</p></div>
         <form className="stack" style={{ gap: 16 }} onSubmit={submit}>
           <div className="field"><label htmlFor="email">Email</label><input id="email" name="email" type="email" required autoComplete="email" /></div>
