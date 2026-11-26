@@ -27,6 +27,10 @@ export async function POST(_req: Request, { params }: { params: Promise<{ subId:
     // Maplerad needs ID checks (BVN, date of birth, address) before the first card. That screen isn't built yet.
     return NextResponse.json({ error: "Finish your ID check first (Cards > Get real cards)" }, { status: 409 });
   }
+  // The card fee comes out of the user's Flowvault wallet first. Not enough money: don't ask Maplerad.
+  const { data: fee, error: feeErr } = await admin.rpc("fv_server_take_card_fee", { p_subscription: subId });
+  if (feeErr) { console.error(feeErr); return NextResponse.json({ error: "Couldn't take the card fee. Please try again." }, { status: 500 }); }
+  if (fee === "insufficient") return NextResponse.json({ error: "Insufficient balance" }, { status: 402 });
   try {
     const reference = await maplerad.requestCard(cust.customer_id);
     const { error } = await admin.rpc("fv_server_card_requested", { p_subscription: subId, p_reference: reference });

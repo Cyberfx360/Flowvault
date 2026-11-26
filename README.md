@@ -113,6 +113,17 @@ Steps:
 
 All card company calls happen on the server (`app/api/...`). The secret key never reaches anyone's phone.
 
+### Card fee
+
+Making a real card costs the user a fee, taken from their Flowvault wallet (default ₦5,000, a guess
+until Maplerad confirms their card fee and minimum load). If the wallet is short, the card isn't
+requested and the app shows "Insufficient balance". If Maplerad fails to make the card, the fee is
+refunded to the wallet. Test cards are free. To change the fee (amount in kobo):
+
+```sql
+update flowvault.settings set card_fee_kobo = 500000;  -- ₦5,000
+```
+
 ### IP whitelisting
 
 Yes, Maplerad's live mode only accepts calls from server IP addresses you have registered with them. The sandbox doesn't need this. Live calls from any other address are refused with error 403, and the app shows "The card company didn't respond".

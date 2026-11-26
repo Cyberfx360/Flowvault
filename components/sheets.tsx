@@ -54,8 +54,9 @@ export function TurnOffSheet({ sub, onClose }: { sub: Sub | null; onClose: () =>
 }
 
 export function AddSubSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { act, toast, subs } = useStore();
+  const { act, toast, subs, profile, provider, balance, cardFee } = useStore();
   const router = useRouter();
+  const fee = profile?.verified || provider !== "mock" ? cardFee : 0; // test cards are free
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [typed, setTyped] = useState("");
@@ -69,12 +70,13 @@ export function AddSubSheet({ open, onClose }: { open: boolean; onClose: () => v
     const price = Number(String(f.get("price")).replace(/[^\d.]/g, ""));
     const day = Number(f.get("day"));
     if (!name || !(price > 0)) return setErr("Enter a name and a price.");
+    if (fee > balance) return setErr(`Insufficient balance. A new card costs ${naira(fee)} and your wallet has ${naira(balance)}. Add money first.`);
     setBusy(true); setErr("");
     const r = await act<string>("add_subscription", {
       p_name: name, p_plan: String(f.get("plan")), p_currency: currency,
       p_price_minor: Math.round(price * 100), p_billing_day: day, p_color: brandFor(name).color ?? COLORS[subs.length % COLORS.length],
     });
-    if (r) await cardsApi.issue(r).catch((e) => toast(e.message)); // real cards only; does nothing for test cards
+    if (r) await cardsApi.issue(r).catch((e) => toast(e.message)); // real cards only (takes the fee); does nothing for test cards
     setBusy(false);
     if (r) { setTyped(""); onClose(); toast(`${name} added with its own card`); router.push(`/subs/${r}?new=1`); }
   }
@@ -97,6 +99,7 @@ export function AddSubSheet({ open, onClose }: { open: boolean; onClose: () => v
           <select id="s-day" name="day" defaultValue={new Date().getDate() > 28 ? 28 : new Date().getDate()}>
             {Array.from({ length: 28 }, (_, i) => <option key={i + 1} value={i + 1}>{i + 1}</option>)}
           </select><span className="hint">Day of the month the service bills you.</span></div>
+        {fee > 0 && <span className="hint">Making the card costs {naira(fee)}, taken from your wallet. You get it back if the card can&apos;t be made.</span>}
         {err && <div className="error" role="alert">{err}</div>}
         <button className="btn primary block" disabled={busy}>{busy ? "Making your card…" : "Add and make its card"}</button>
       </form>
