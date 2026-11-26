@@ -123,7 +123,8 @@ rounded up to the next ₦100 (₦10,000 at ₦1,550/$). If the wallet is short,
 the card isn't requested and the app shows "Insufficient balance". If Maplerad fails, the fee is refunded.
 
 ```sql
-update flowvault.settings set card_fee_usd_cents = 645;   -- change the dollar amount (cost is 515)
+update flowvault.settings set card_fee_usd_cents = 515;          -- Maplerad's cost
+update flowvault.settings set card_fee_margin_usd_cents = 130;   -- Flowvault's margin
 update flowvault.fx_rates set ngn_per_unit = 1550 where currency = 'USD';  -- the rate used
 ```
 
