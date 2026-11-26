@@ -56,7 +56,7 @@ export function GlassTabs({ tabs }: { tabs: Tab[] }) {
     icons.current.forEach((ic, i) => {
       if (!ic) return;
       const d = Math.abs(s.pad + (i + 0.5) * s.w - center) / s.w;
-      const k = 1 + lift * 0.22 * Math.max(0, 1 - d);
+      const k = 1 + lift * 0.16 * Math.max(0, 1 - d);
       ic.style.transform = k === 1 ? "" : `scale(${k})`;
     });
   };
@@ -226,8 +226,10 @@ export function GlassTabs({ tabs }: { tabs: Tab[] }) {
       <div className="glass-thumb" ref={thumb} aria-hidden />
       {tabs.map(({ href, label, Icon }, i) => (
         <Link key={href} href={href} aria-current={i === active ? "page" : undefined} draggable={false}>
-          <span className="ico" ref={(el) => { icons.current[i] = el; }}><Icon /></span>
-          <span className="lbl">{label}</span>
+          <span className="inner" ref={(el) => { icons.current[i] = el; }}>
+            <span className="ico"><Icon /></span>
+            <span className="lbl">{label}</span>
+          </span>
         </Link>
       ))}
     </nav>
