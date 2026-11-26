@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { Back } from "@/components/icons";
 
-// Fill these in before launch.
+// Company details shown on Terms, Privacy and Profile.
 export const LEGAL = {
   company: "Krevox Global Ltd",
   rc: "RC 9223711",
   address: "Back of Africa House, Ogwashi-Uku, Delta State, Nigeria",
-  email: "[support email]",
+  email: "imidoglobal@gmail.com",
   updated: "26 November 2026",
 };
 

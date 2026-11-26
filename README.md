@@ -166,4 +166,4 @@ It shows Maplerad balances (USD Spend, USD Treasury, Naira), the Paystack balanc
 
 ## Terms and Privacy
 
-`/terms` and `/privacy` are DRAFTS for a lawyer to review. Fill in the support email in `components/legal.tsx` (LEGAL). Signup needs the "I agree" box; the time is saved in the user's sign-up data as `terms_accepted_at`.
+`/terms` and `/privacy` are DRAFTS for a lawyer to review. Company details live in `components/legal.tsx` (LEGAL). Signup needs the "I agree" box; the time is saved in the user's sign-up data as `terms_accepted_at`.
